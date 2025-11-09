@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library Tracker</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/shelves.css" />
+  <link rel="stylesheet" href="styles/modal.css" />
+  <link rel="stylesheet" href="styles/handsfree.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Library Tracker</h1>
+    <div class="controls">
+      <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
+      <div class="isbn-inline" style="display:flex;gap:6px;align-items:center">
+        <input id="isbn-input" inputmode="numeric" pattern="[-0-9Xx ]+" placeholder="Enter ISBN…" aria-label="Enter ISBN" style="width:180px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#0e141f;color:var(--fg)" />
+        <button id="btn-add" aria-label="Add ISBN">Add</button>
+      </div>
+      <button id="btn-scan" aria-label="Open scanner">Scan</button>
+      <button id="btn-import" aria-label="Import">Import</button>
+      <button id="btn-export" aria-label="Export">Export</button>
+      <button id="toggle-handsfree" aria-pressed="false">Hands-Free</button>
+      <button id="toggle-voice" aria-pressed="false">Voice</button>
+      <button id="btn-settings" aria-label="Settings">Settings</button>
+      <input id="file-import" type="file" accept="application/json" style="display:none" />
+    </div>
+  </header>
+
+  <main>
+    <section id="shelves" aria-live="polite"></section>
+  </main>
+
+  <div id="book-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true"></div>
+  <div id="scanner-overlay" hidden></div>
+  <div id="handsfree-overlay" hidden>
+    <div id="hf-cursor" class="hf-cursor" aria-hidden="true"></div>
+  </div>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel" hidden></div>
+
+  <!-- External libraries -->
+  <!-- idb loaded via dynamic import in db.js to avoid MIME/CORS issues -->
+  <script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+  <!-- Our scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/shelves.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/barcode.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/importExport.js"></script>
+  <script src="js/handsfree.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

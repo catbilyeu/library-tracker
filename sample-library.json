@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "exportedAt": 0,
+  "books": {
+    "9781449331818": {
+      "id": "9781449331818",
+      "isbn13": "9781449331818",
+      "isbn10": "1449331815",
+      "title": "Learning JavaScript Design Patterns",
+      "authors": ["Addy Osmani"],
+      "coverUrl": "https://covers.openlibrary.org/b/isbn/9781449331818-M.jpg",
+      "subjects": ["JavaScript", "Design Patterns"],
+      "addedAt": 1700000000000,
+      "borrowHistory": []
+    }
+  }
+}

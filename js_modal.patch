@@ -1,0 +1,163 @@
+--- .tmp_modal_orig.js	2025-11-08 18:37:53
++++ js/modal.js	2025-11-08 18:39:46
+@@ -1,12 +1,34 @@
+ (function(){
+   let publish=()=>{}; let subscribe=()=>{}; let current = null;
++  let previouslyFocused = null; // to restore focus on close
++  let keydownHandler = null;    // to trap focus and handle Esc
++
+   const root = ()=> document.getElementById('book-modal');
+ 
+-  function close(){ const r = root(); r.classList.remove('open'); r.classList.add('closing'); setTimeout(()=>{ r.classList.remove('closing'); r.setAttribute('aria-hidden','true'); r.innerHTML=''; publish('modal:close',{}); current=null; }, 220); }
++  function close(){
++    const r = root();
++    // remove listeners added on open
++    if (keydownHandler) { r.removeEventListener('keydown', keydownHandler, true); keydownHandler = null; }
+ 
+-  function headerArea(b){ return `<div class="header">
+-    <div class="title-wrap"><h2 class="title">${b.title||'(Untitled)'}</h2><div class="subtitle">${(b.authors||[]).join(', ')}</div></div>
+-    <button class="close" aria-label="Close">×</button>
++    r.classList.remove('open');
++    r.classList.add('closing');
++    const toRestore = previouslyFocused; previouslyFocused = null;
++    setTimeout(()=>{
++      r.classList.remove('closing');
++      r.setAttribute('aria-hidden','true');
++      r.innerHTML='';
++      publish('modal:close',{});
++      current=null;
++      // restore focus to the element that had focus before opening
++      if (toRestore && typeof toRestore.focus === 'function') {
++        try { toRestore.focus(); } catch(e){}
++      }
++    }, 220);
++  }
++
++  function headerArea(b, titleId){ return `<div class="header">
++    <div class="title-wrap"><h2 id="${titleId}" class="title">${b.title||'(Untitled)'}</h2><div class="subtitle">${(b.authors||[]).join(', ')}</div></div>
++    <button class="close" type="button" aria-label="Close">×</button>
+   </div>`; }
+ 
+   function bodyArea(b){
+@@ -29,33 +51,70 @@
+     </div>`;
+   }
+ 
++  function getFocusable(container){
++    const selectors = [
++      'a[href]', 'area[href]', 'input:not([disabled]):not([type="hidden"])',
++      'select:not([disabled])', 'textarea:not([disabled])',
++      'button:not([disabled])', '[tabindex]:not([tabindex="-1"])'
++    ].join(',');
++    const nodes = Array.from(container.querySelectorAll(selectors));
++    return nodes.filter(el => {
++      const style = window.getComputedStyle(el);
++      const isVisible = style.visibility !== 'hidden' && style.display !== 'none' && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
++      return isVisible && !el.hasAttribute('inert');
++    });
++  }
++
+   async function open({ isbn13 }){
+     current = await window.Storage.getBook(isbn13);
+     if(!current) return;
++
+     const r = root();
+-    r.innerHTML = `<div class="panel" role="document">${headerArea(current)}${bodyArea(current)}</div>`;
++    // If re-rendering while open, ensure we don't stack listeners
++    if (keydownHandler) { r.removeEventListener('keydown', keydownHandler, true); keydownHandler = null; }
++    previouslyFocused = document.activeElement;
++
++    const titleId = 'book-modal-title';
++    r.innerHTML = `<div class="panel">${headerArea(current, titleId)}${bodyArea(current)}</div>`;
+     r.setAttribute('aria-hidden','false');
++    r.setAttribute('aria-labelledby', titleId);
+     r.classList.add('open');
++
++    const panel = r.querySelector('.panel');
++    panel.setAttribute('tabindex','-1');
++
++    // Close interactions
+     r.querySelector('.close').addEventListener('click', close);
+     r.addEventListener('click', (e)=>{ if(e.target===r) close(); });
++
++    // Action buttons
+     const lendBtn = r.querySelector('#btn-lend');
+     const returnBtn = r.querySelector('#btn-return');
+     const removeBtn = r.querySelector('#btn-remove');
++
++    // Initial focus: first primary action, then remove, then close, then panel
++    const initial = lendBtn || returnBtn || removeBtn || r.querySelector('.close') || panel;
++    if (initial && typeof initial.focus === 'function') initial.focus();
++
+     if(lendBtn){ lendBtn.addEventListener('click', ()=>{
+       // themed inline prompt
+       const overlay = document.createElement('div');
++      overlay.className = 'inline-overlay';
++      overlay.setAttribute('role','dialog');
++      overlay.setAttribute('aria-modal','true');
+       overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:1100';
+       overlay.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;min-width:min(90vw,360px);box-shadow:0 10px 40px rgba(0,0,0,.5)">
+-        <h3 style="margin:0 0 10px">Lend book</h3>
+-        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Borrower name</label>
++        <h3 id="lend-title" style="margin:0 0 10px">Lend book</h3>
++        <label for="borrower-name" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Borrower name</label>
+         <input id="borrower-name" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:#0e141f;color:var(--fg)" placeholder="Alex Johnson" />
+         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+-          <button id="lend-cancel">Cancel</button>
+-          <button id="lend-confirm" class="accent">Confirm</button>
++          <button id="lend-cancel" type="button">Cancel</button>
++          <button id="lend-confirm" class="accent" type="button">Confirm</button>
+         </div>
+       </div>`;
+       r.appendChild(overlay);
+       const input = overlay.querySelector('#borrower-name'); input.focus();
++      overlay.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ e.preventDefault(); overlay.remove(); }});
+       overlay.querySelector('#lend-cancel').onclick = ()=> overlay.remove();
+       const confirm = async ()=>{
+         const borrower = input.value.trim(); if(!borrower) return;
+@@ -78,6 +137,45 @@
+     if(removeBtn){ removeBtn.addEventListener('click', async ()=>{
+       if(confirm('Remove this book?')){ await window.Storage.deleteBook(current.isbn13); close(); }
+     }); }
++
++    // Focus trap + Esc to close while modal is open
++    keydownHandler = function(e){
++      // Prioritize inline overlay if present
++      const container = r.querySelector('.inline-overlay') || panel;
++      if (e.key === 'Escape'){
++        // If an inline overlay is open, close that first
++        const inline = r.querySelector('.inline-overlay');
++        if (inline) { e.preventDefault(); inline.remove(); return; }
++        e.preventDefault();
++        close();
++        return;
++      }
++      if (e.key === 'Tab'){
++        const focusable = getFocusable(container);
++        if (focusable.length === 0){ e.preventDefault(); return; }
++        const first = focusable[0];
++        const last = focusable[focusable.length - 1];
++        const active = document.activeElement;
++        // If focus has somehow escaped the container, bring it back
++        if (!container.contains(active)){
++          e.preventDefault();
++          (e.shiftKey ? last : first).focus();
++          return;
++        }
++        if (e.shiftKey){
++          if (active === first || active === container){
++            last.focus();
++            e.preventDefault();
++          }
++        } else {
++          if (active === last){
++            first.focus();
++            e.preventDefault();
++          }
++        }
++      }
++    };
++    r.addEventListener('keydown', keydownHandler, true);
+   }
+ 
+   function init(api){ publish = api.publish; subscribe = api.subscribe; subscribe('modal:open', open); subscribe('book:updated', ({book})=>{ if(current && book.isbn13===current.isbn13) open({isbn13: current.isbn13}); }); }

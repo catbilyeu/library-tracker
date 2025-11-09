@@ -1,0 +1,29 @@
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s ease;background:rgba(4,10,20,.35);backdrop-filter:blur(10px) saturate(120%);z-index:1000}
+.modal.open{opacity:1;pointer-events:auto}
+.modal.closing{opacity:0;pointer-events:none}
+.modal .panel{position:relative;background:linear-gradient(180deg,rgba(18,28,48,.85),rgba(10,16,30,.85));border:1px solid var(--border);border-radius:16px;max-width:780px;width:min(92vw,780px);max-height:90vh;overflow:auto;padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);transform:translateY(12px) scale(.98);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .24s ease,box-shadow .24s}
+.modal.open .panel{transform:none;opacity:1}
+.modal.closing .panel{transform:translateY(8px) scale(.98);opacity:0}
+.modal .header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.05)}
+.modal .title-wrap{display:flex;flex-direction:column;gap:6px}
+.modal .subtitle{color:var(--muted);font-weight:400;font-size:13px}
+.modal .body{display:grid;grid-template-columns:180px 1fr;gap:18px}
+.modal .cover{width:180px;aspect-ratio:2/3;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:#0a121f}
+.modal .actions{display:flex;gap:10px;flex-wrap:wrap}
+.modal .history{margin-top:12px;border-top:1px solid var(--border);padding-top:8px}
+.modal .close{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);width:34px;height:34px;border-radius:10px;display:inline-grid;place-items:center;color:var(--muted);cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.modal .close:hover{background:rgba(255,255,255,.12);color:var(--fg)}
+@media (max-width:720px){.modal .body{grid-template-columns:1fr}.modal .cover{width:100%}}
+
+/* Inline sub-dialog used inside modal (e.g., Lend confirm) */
+.inline-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1100}
+.inline-overlay .dialog{background:linear-gradient(180deg,rgba(18,28,48,.95),rgba(10,16,30,.95));border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);padding:16px;min-width:min(90vw,380px)}
+.inline-overlay .dialog h3{margin:0 0 10px}
+.inline-overlay .dialog .row{margin:10px 0}
+.inline-overlay .dialog input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:#0e141f;color:var(--fg)}
+.inline-overlay .dialog .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+/* Scanner target area styling */
+.scanner-target{width:min(92vw,800px);max-width:800px;height:min(56vh,440px);max-height:70vh;aspect-ratio:4/3;background:#000;border:2px solid var(--accent);border-radius:12px;overflow:hidden}
+/* Ensure Quagga-injected video/canvas fit within target without overflow */
+#scanner-target video,#scanner-target canvas{width:100%!important;height:100%!important;object-fit:contain;display:block;background:#000}
