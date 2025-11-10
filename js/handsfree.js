@@ -5,8 +5,6 @@
   let starting=false; let restartTimer=null;
   // Watchdog and hover state
   let lastResultsTs=0; let watchdogId=null; let lastHoverEl=null; let restartInFlight=false;
-  // Watchdog and hover state
-  let lastResultsTs=0; let watchdogId=null; let lastHoverEl=null;
 
   // Sensitivity/config
   let deviceId=null; let settingsLoaded=false;
@@ -56,7 +54,6 @@
     if(!isEnabled) return;
     const now = performance.now(); lastResultsTs = now;
     if(lastFrameTs){ const inst = 1000/(now-lastFrameTs); fpsAvg = fpsAvg? (fpsAvg*0.8 + inst*0.2) : inst; }
-    lastFrameTs = now;
     lastFrameTs = now;
 
     if(!results.multiHandLandmarks || results.multiHandLandmarks.length===0){ updateHUD('No hand'); return; }
