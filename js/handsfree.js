@@ -4,6 +4,8 @@
   let lastClick=0; let hudEl=null; let rafId=null;
   let starting=false; let restartTimer=null;
   // Watchdog and hover state
+  let lastResultsTs=0; let watchdogId=null; let lastHoverEl=null; let restartInFlight=false;
+  // Watchdog and hover state
   let lastResultsTs=0; let watchdogId=null; let lastHoverEl=null;
 
   // Sensitivity/config
@@ -46,14 +48,15 @@
   function updateHUD(state){
     if(!hudEl) return;
     const fps = fpsAvg? Math.round(fpsAvg) : '—';
-    hudEl.textContent = `${state} • ${fps} fps`;
+    const since = lastResultsTs? Math.round((performance.now()-lastResultsTs)/1000) : '—';
+    hudEl.textContent = `${state} • ${fps} fps • ${since}s`;
   }
 
   function onResults(results){
     if(!isEnabled) return;
-    lastResultsTs = performance.now();
-    const now = performance.now();
+    const now = performance.now(); lastResultsTs = now;
     if(lastFrameTs){ const inst = 1000/(now-lastFrameTs); fpsAvg = fpsAvg? (fpsAvg*0.8 + inst*0.2) : inst; }
+    lastFrameTs = now;
     lastFrameTs = now;
 
     if(!results.multiHandLandmarks || results.multiHandLandmarks.length===0){ updateHUD('No hand'); return; }
@@ -119,6 +122,7 @@
     stream=null;
 
     video = document.createElement('video'); video.playsInline = true; video.muted = true; video.autoplay = true; video.style.display='none'; document.body.appendChild(video);
+    video.addEventListener('pause', ()=>{ if(isEnabled) try{ video.play(); }catch{} });
 
     // Try a cascade of constraints to avoid OverconstrainedError
     const tryList = [];
@@ -154,14 +158,16 @@
 
     // Watchdog: restart pipeline if no frames processed for 5s
     if(watchdogId){ try{ clearInterval(watchdogId); }catch{} watchdogId=null; }
-    watchdogId = setInterval(()=>{
-      if(!isEnabled) return;
-      const gap = performance.now() - lastResultsTs;
+    watchdogId = setInterval(async ()=>{
+      if(!isEnabled || restartInFlight) return;
+      const gap = performance.now() - (lastResultsTs||0);
       if(gap > 5000){
         console.warn('[motion-cursor] Watchdog restart after', Math.round(gap),'ms without frames');
-        stop().then(start);
+        restartInFlight = true;
+        await hardRestart();
+        restartInFlight = false;
       }
-    }, 3000);
+    }, 2000);
 
     // If camera track ends (device sleep / permission flip), restart
     try{
@@ -180,6 +186,18 @@
     try{ if(video){ try{ await video.pause(); } catch{} try{ video.srcObject=null; } catch{} video.remove(); } video=null; } catch{}
     try{ if(lastHoverEl){ lastHoverEl.classList.remove('hf-hover'); lastHoverEl=null; } }catch{}
     starting=false;
+  }
+
+  async function hardRestart(){
+    try{
+      await stop();
+      // Tear down MediaPipe instance to clear any internal stuck state
+      try{ await hands?.close?.(); }catch{}
+      hands = null;
+      // Recreate instance and start fresh
+      ensureMediaPipe();
+      await start();
+    }catch(e){ console.warn('[motion-cursor] hardRestart failed', e); }
   }
 
   function toggle({ enabled }){
