@@ -9,6 +9,7 @@
   // Sensitivity/config
   let deviceId=null; let settingsLoaded=false;
   let prevX=null, prevY=null; let lastFrameTs=null; let fpsAvg=null;
+  let sendErrorCount=0;
 
   function mapSensitivity(s){
     s = Math.max(0, Math.min(1, Number(s)||0));
@@ -48,6 +49,14 @@
     const fps = fpsAvg? Math.round(fpsAvg) : '—';
     const since = lastResultsTs? Math.round((performance.now()-lastResultsTs)/1000) : '—';
     hudEl.textContent = `${state} • ${fps} fps • ${since}s`;
+  }
+
+  function centerCursor(){
+    try{
+      const cx = Math.round(window.innerWidth/2), cy = Math.round(window.innerHeight/2);
+      prevX = cx; prevY = cy;
+      if(cursor){ cursor.style.left = cx+'px'; cursor.style.top = cy+'px'; }
+    }catch{}
   }
 
   function onResults(results){
@@ -147,11 +156,29 @@
       }
     }
 
-    const onFrame = async ()=>{ try{ await hands.send({ image: video }); } catch(e){} rafId = requestAnimationFrame(onFrame); };
+    const onFrame = async ()=>{
+      try{
+        if(!video || video.readyState < 2){ rafId = requestAnimationFrame(onFrame); return; }
+        const vw = video.videoWidth||0, vh = video.videoHeight||0;
+        if(vw<=0 || vh<=0){ rafId = requestAnimationFrame(onFrame); return; }
+        await hands.send({ image: video });
+        sendErrorCount = 0;
+      } catch(e){
+        sendErrorCount++;
+        const msg = String(e && (e.message||e));
+        if(msg.includes('ROI width') || msg.includes('Aborted') || sendErrorCount>=5){
+          console.warn('[motion-cursor] onFrame error, restarting', msg);
+          await hardRestart(); return;
+        }
+      }
+      rafId = requestAnimationFrame(onFrame);
+    };
     rafId = requestAnimationFrame(onFrame);
 
     Utils.toast('Hands-free is on');
     starting=false;
+    // Reset cursor to center on start
+    centerCursor();
 
     // Watchdog: restart pipeline if no frames processed for 5s
     if(watchdogId){ try{ clearInterval(watchdogId); }catch{} watchdogId=null; }
@@ -182,6 +209,7 @@
     try{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } } catch{}
     try{ if(video){ try{ await video.pause(); } catch{} try{ video.srcObject=null; } catch{} video.remove(); } video=null; } catch{}
     try{ if(lastHoverEl){ lastHoverEl.classList.remove('hf-hover'); lastHoverEl=null; } }catch{}
+    prevX=null; prevY=null; sendErrorCount=0;
     starting=false;
   }
 
