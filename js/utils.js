@@ -21,6 +21,17 @@
       return true;
     },
 
+    // Names: title case first and last tokens (and hyphenated parts)
+    titleCaseName(name){
+      if(!name) return '';
+      const tcPart = (p)=> p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : '';
+      return String(name)
+        .trim()
+        .split(/\s+/)
+        .map(word=> word.split('-').map(tcPart).join('-'))
+        .join(' ');
+    },
+
     // ISBN helpers
     normalizeDigits(s){ return (s||'').replace(/\D/g,''); },
     isValidISBN13(isbn){

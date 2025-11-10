@@ -31,3 +31,9 @@
 .history .row-actions { margin-left: .5rem; opacity: .85; }
 .history .row-actions .mini { font-size: 11px; padding: 2px 6px; margin-left: 6px; }
 .history li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+/* Borrow history list layout */
+.history ul.history-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.history ul.history-list li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.history ul.history-list li .row-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history ul.history-list li .row-actions { display: inline-flex; gap: 6px; }
+.history ul.history-list li .row-actions .mini { font-size: 11px; padding: 4px 8px; }

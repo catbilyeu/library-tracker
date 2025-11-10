@@ -29,14 +29,17 @@
     const raw = (b.borrowHistory||[]);
     const isLent = raw.some(x=>!x.returnedAt);
     const last = raw.slice().reverse().find(x=>!x.returnedAt);
+    const fmt = (ts)=>{ try{ const d=new Date(ts); return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }); }catch{ return ''; }};
     const items = raw.map((h, idx)=>{
-      const when=new Date(h.borrowedAt).toLocaleString();
-      const ret=h.returnedAt?(' (returned '+new Date(h.returnedAt).toLocaleString()+')'):' (out)';
-      return '<li data-idx="'+idx+'">'+when+' — '+(h.borrower||'')+ret+' <span class="row-actions">'+
-             '<button type="button" class="mini edit" aria-label="Edit entry">Edit</button> '+
+      const borrower = Utils.titleCaseName(h.borrower||'');
+      const borrowed = fmt(h.borrowedAt);
+      const returned = h.returnedAt ? fmt(h.returnedAt) : null;
+      const line = returned ? `${borrower} — Borrowed: ${borrowed} — Returned: ${returned}` : `${borrower} — Borrowed: ${borrowed} — Out`;
+      return '<li data-idx="'+idx+'"><span class="row-line">'+line+'</span><span class="row-actions">'+
+             '<button type="button" class="mini edit" aria-label="Edit entry">Edit</button>'+
              '<button type="button" class="mini danger remove" aria-label="Remove entry">Remove</button></span></li>';
-    }).reverse().join('')||'<li>None</li>';
-    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" onerror="Utils.coverErr(this)" alt="Cover" /><div><div class="actions">'+(!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+last.borrower+')' : '')+'</button>')+'<button id="btn-remove" class="danger">Remove</button></div><div class="history"><h3>Borrow history</h3><ul>'+items+'</ul></div></div></div>';
+    }).join('')||'<li>None</li>';
+    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" onerror="Utils.coverErr(this)" alt="Cover" /><div><div class="actions">'+(!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+Utils.titleCaseName(last.borrower)+')' : '')+'</button>')+'<button id="btn-remove" class="danger">Remove</button></div><div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
   }
 
   function getFocusable(container){
@@ -116,7 +119,7 @@
           overlay.appendChild(dialog); r.appendChild(overlay); i1.focus();
           const parseDate=(v)=>{ if(!v) return null; try{ const d=new Date(v+'T00:00:00'); if(!isNaN(d)) return d.getTime(); }catch{} return null; };
           const doSave=async()=>{
-            entry.borrower=(i1.value||'').trim();
+            entry.borrower=Utils.titleCaseName((i1.value||'').trim());
             const bAt=parseDate(d1.value); if(bAt!==null) entry.borrowedAt=bAt;
             const rAt=parseDate(d2.value); entry.returnedAt = rAt; // allow clearing by empty input
             await window.Storage.putBook(current);
