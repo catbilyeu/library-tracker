@@ -80,7 +80,9 @@
     // - Relative weekday: last Monday, next Tue(sday), this Friday
     parseDatePhrase(input){
       if(!input || typeof input !== 'string') return null;
-      const s = input.trim().toLowerCase();
+      let s = input.trim().toLowerCase();
+      // Normalize ordinals: 1st, 2nd, 3rd, 4th -> 1,2,3,4
+      s = s.replace(/\b(\d{1,2})(st|nd|rd|th)\b/g, '$1');
       const toMidnight = (d)=>{ const dt=new Date(d.getFullYear(), d.getMonth(), d.getDate()); return dt.getTime(); };
       const now = new Date();
 

@@ -83,6 +83,21 @@
                 <input id="voice-enabled" type="checkbox" ${s.voiceEnabled? 'checked':''} />
               </div>
               <div class="settings-row">
+                <label for="voice-ptt">Push-to-talk (hold Space)</label>
+                <input id="voice-ptt" type="checkbox" ${s.voicePttOnly? 'checked':''} />
+              </div>
+              <div class="settings-row">
+                <label for="voice-ann">Enable announcements</label>
+                <input id="voice-ann" type="checkbox" ${s.voiceAnnouncements!==false? 'checked':''} />
+              </div>
+              <div class="settings-row">
+                <label for="voice-delay">Command processing delay</label>
+                <div class="range-wrap">
+                  <input id="voice-delay" type="range" min="0" max="1500" step="50" value="${typeof s.voiceProcessDelayMs==='number'? s.voiceProcessDelayMs : 350}" />
+                  <span id="voice-delay-value" class="muted">${typeof s.voiceProcessDelayMs==='number'? s.voiceProcessDelayMs : 350} ms</span>
+                </div>
+              </div>
+              <div class="settings-row">
                 <label for="mic-select">Microphone</label>
                 <select id="mic-select" aria-label="Microphone"></select>
               </div>
@@ -104,6 +119,8 @@
     // Sens value live
     const sens = qs(root, '#hf-sens'); const sensVal = qs(root, '#hf-sens-value');
     sens.addEventListener('input', ()=>{ sensVal.textContent = `${Math.round(+sens.value*100)}%`; });
+    const vDelay = qs(root, '#voice-delay'); const vDelayVal = qs(root, '#voice-delay-value');
+    vDelay.addEventListener('input', ()=>{ vDelayVal.textContent = `${vDelay.value} ms`; });
 
     // Wire buttons
     qs(root, '#settings-close').addEventListener('click', close);
@@ -112,23 +129,25 @@
       const next = {
         handsFreeEnabled: qs(root,'#hf-enabled').checked,
         voiceEnabled: qs(root,'#voice-enabled').checked,
+        voicePttOnly: qs(root,'#voice-ptt').checked,
+        voiceAnnouncements: qs(root,'#voice-ann').checked,
         cameraDeviceId: camSel.value || '',
         micDeviceId: micSel.value || '',
         handsFreeSensitivity: parseFloat(sens.value),
-        handsFreeMirrorX: qs(root,'#hf-mirror').checked
+        handsFreeMirrorX: qs(root,'#hf-mirror').checked,
+        voiceProcessDelayMs: parseInt(vDelay.value,10)
       };
       try{
         const saved = await window.Storage.setSettings(next);
-    // Publish toggles AFTER applying device/sensitivity to avoid start/stop race conditions
+        // Apply device and tuning settings only; do not auto-toggle features on
         try{ window.HandsFree?.setDeviceId?.(saved.cameraDeviceId); } catch{}
         try{ window.Voice?.setMicDeviceId?.(saved.micDeviceId); } catch{}
         try{ window.HandsFree?.setSensitivity?.(saved.handsFreeSensitivity); } catch{}
         try{ window.HandsFree?.setMirrorX?.(saved.handsFreeMirrorX!==false); } catch{}
-        try{ publish('handsfree:toggle', { enabled: !!saved.handsFreeEnabled }); } catch{}
-        try{ publish('voice:toggle', { enabled: !!saved.voiceEnabled }); } catch{}
-        // Reflect state on header toggles if present
-        const hfBtn = document.getElementById('toggle-handsfree'); if(hfBtn) hfBtn.setAttribute('aria-pressed', String(!!saved.handsFreeEnabled));
-        const vBtn = document.getElementById('toggle-voice'); if(vBtn) vBtn.setAttribute('aria-pressed', String(!!saved.voiceEnabled));
+        try{ window.Voice?.setPttMode?.(!!saved.voicePttOnly); } catch{}
+        try{ window.Voice?.setAnnouncements?.(saved.voiceAnnouncements!==false); } catch{}
+        try{ window.Voice?.setProcessDelay?.(saved.voiceProcessDelayMs); } catch{}
+        // Do not change header toggle UI state here; reflect actual runtime state only when user toggles
         Utils.toast('Settings applied', { type:'ok' });
         close();
       }catch(e){ console.error(e); Utils.toast('Failed to save settings', { type:'error' }); }
@@ -161,9 +180,8 @@
 
   // Expose simple apply passthrough for any external callers
   async function apply(settings){
-    const saved = await window.Storage.setSettings(settings||{});
-    publish('handsfree:toggle', { enabled: !!saved.handsFreeEnabled });
-    publish('voice:toggle', { enabled: !!saved.voiceEnabled });
+    // Legacy helper: now only persists without toggling features on
+    await window.Storage.setSettings(settings||{});
   }
 
   function init(api){ publish=api.publish; subscribe=api.subscribe; }

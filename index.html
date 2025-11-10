@@ -21,11 +21,17 @@
         <button id="btn-add" aria-label="Add ISBN">Add</button>
       </div>
       <button id="btn-scan" aria-label="Open scanner">Scan</button>
-      <button id="btn-import" aria-label="Import">Import</button>
-      <button id="btn-export" aria-label="Export">Export</button>
       <button id="toggle-handsfree" aria-pressed="false">Hands-Free</button>
       <button id="toggle-voice" aria-pressed="false">Voice</button>
-      <button id="btn-settings" aria-label="Settings">Settings</button>
+      
+      <div class="menu" id="hamburger">
+        <button class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-haspopup="true">☰</button>
+        <div class="menu-list" role="menu">
+          <button id="btn-import" role="menuitem">Import</button>
+          <button id="btn-export" role="menuitem">Export</button>
+          <button id="btn-settings" role="menuitem">Settings</button>
+        </div>
+      </div>
       <input id="file-import" type="file" accept="application/json" style="display:none" />
     </div>
   </header>

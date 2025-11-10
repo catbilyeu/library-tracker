@@ -7,10 +7,13 @@
   let rec=null; let recLang = navigator.language || 'en-US';
   let hud=null; let status='idle'; // idle | listening | processing
   let interimText=''; let finalText='';
-  let continuousMode=true; // hands-free/continuous listening
+  let continuousMode=true; // continuous listening (mic open)
   let pttActive=false; // Spacebar held state
   let startedByPTT=false; // last start source
   let restartOnEnd=false; // internal restart guard
+  let announcements=true; // speech confirmations
+  let processDelayMs=350; // buffer time before processing final text (to allow users to finish)
+  let pttOnly=false; // push-to-talk mode (Spacebar)
 
   // Mic selection (best-effort: Web Speech API doesn't expose device routing)
   let selectedMicDeviceId=null; let micStream=null; let micLabel='';
@@ -55,6 +58,7 @@
   // Speak confirmation using SpeechSynthesis
   function speak(text){
     try{
+      if(!announcements) return;
       if(!('speechSynthesis' in window)) return;
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = recLang;
@@ -73,9 +77,38 @@
   function parseIntent(text){
     const s = (text||'').trim().toLowerCase().replace(/[.,!?]+$/,'');
 
+    // Generic confirm for pending actions (e.g., remove)
+    if(/^(yes|confirm|remove)$/.test(s)) return { type:'confirm:generic', payload:{} };
+
+    // close/dismiss/cancel modal or overlays
+    if(/^(close|dismiss|cancel)$/.test(s)) return { type:'modal:close', payload:{} };
+
     // search/find/lookup
     let m = s.match(/^(search|find|look\s*up|lookup)\s+(.+)/i);
     if(m) return { type:'search', payload:{ q: m[2] } };
+
+    // "do i have ..." check
+    m = s.match(/^do\s+i\s+have\s+(.+)/i);
+    if(m) return { type:'book:check_have', payload:{ target: m[1] } };
+
+    // "is anyone borrowing ..." -> open modal and speak status
+    m = s.match(/^is\s+any(one|body)\s+borrow(ing)?\s+(.+)/i);
+    if(m) return { type:'book:is_borrowed', payload:{ target: m[3] } };
+
+    // name borrowed book => lend intent
+    m = s.match(/^([^\d]+?)\s+borrowed\s+(.+)/i);
+    if(m){
+      const borrower=(m[1]||'').trim(); const target=(m[2]||'').trim();
+      return { type:'lend', payload:{ target, borrower, borrowedAt: null } };
+    }
+
+    // name returned the book(s) they borrowed [on <datePhrase>]
+    m = s.match(/^(.+?)\s+returned\s+(the\s+)?book(s)?(\s+they\s+borrowed)?(?:\s+on\s+(.+))?$/i);
+    if(m){
+      const borrower=(m[1]||'').trim(); const datePhrase=(m[5]||'').trim();
+      let returnedAt = null; if(datePhrase){ returnedAt = Utils.parseDatePhrase(datePhrase); }
+      return { type:'borrower:return', payload:{ borrower, returnedAt } };
+    }
 
     // open/start scanner
     if(/\b(open|start)\b\s+(the\s+)?scanner\b/.test(s) || /\bstart\b\s+scan(ner)?\b/.test(s))
@@ -138,7 +171,7 @@
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     rec = new SR();
     rec.continuous = continuousMode;
-    rec.interimResults = true;
+    rec.interimResults = true; // keep interim to build buffer
     rec.lang = recLang;
 
     rec.onresult = (e)=>{
@@ -150,19 +183,21 @@
       }
       status = finalText ? 'processing' : 'listening';
       renderHUD();
-
       if(finalText){
-        const intent = parseIntent(finalText);
-        if(intent){
-          publish('voice:intent', intent);
-          const msg = confirmationFor(intent); if(msg) speak(msg);
-        }
-        // Reset for next utterance
-        finalText=''; interimText='';
-        // If not continuous and we are in PTT, keep listening until keyup; otherwise stop.
-        if(!continuousMode && !pttActive){ stopRecognition(/*user*/false); }
-        status = (continuousMode || pttActive) ? 'listening' : 'idle';
-        renderHUD();
+        const captured = finalText; // snapshot before we clear
+        setTimeout(()=>{
+          const intent = parseIntent(captured);
+          if(intent){
+            publish('voice:intent', intent);
+            const msg = confirmationFor(intent); if(msg) speak(msg);
+          }
+          // Reset for next utterance
+          finalText=''; interimText='';
+          // If not continuous and we are in PTT, keep listening until keyup; otherwise stop.
+          if(!continuousMode && !pttActive){ stopRecognition(/*user*/false); }
+          status = (continuousMode || pttActive) ? 'listening' : 'idle';
+          renderHUD();
+        }, processDelayMs);
       }
     };
 
@@ -207,18 +242,15 @@
     }
   }
 
-  function setHandsFree({enabled}){
-    continuousMode = !!enabled;
+  function setPttMode(on){
+    pttOnly = !!on;
+    continuousMode = !pttOnly;
     if(rec) rec.continuous = continuousMode;
     if(isEnabled){
-      if(continuousMode){
-        // ensure we are started
-        startRecognition();
-      } else {
-        // in PTT-only mode, stop unless Space is held
-        if(!pttActive) stopRecognition();
-      }
+      if(continuousMode){ startRecognition(); }
+      else { if(!pttActive) stopRecognition(); }
     }
+    try{ Storage?.setSettings?.({ voicePttOnly: pttOnly }); }catch{}
     renderHUD();
   }
 
@@ -276,7 +308,18 @@
     ensureHUD();
     // external controls
     subscribe('voice:toggle', toggle);
-    subscribe('handsfree:toggle', setHandsFree);
+    subscribe('voice:setAnnouncements', ({enabled})=>{ announcements = !!enabled; });
+    subscribe('voice:setProcessDelay', ({ms})=>{ processDelayMs = Math.max(0, Number(ms)||0); });
+    subscribe('voice:setPtt', ({enabled})=>{ setPttMode(!!enabled); });
+    // initialize from saved settings
+    try{
+      Storage.getSettings().then(s=>{
+        announcements = s.voiceAnnouncements!==false;
+        if(typeof s.voiceProcessDelayMs === 'number') processDelayMs = Math.max(0, Number(s.voiceProcessDelayMs)||0);
+        setPttMode(!!s.voicePttOnly);
+        renderHUD();
+      }).catch(()=>{});
+    }catch{}
 
     // Hotkeys: push-to-talk Space
     document.addEventListener('keydown', onKeyDown);
@@ -284,5 +327,7 @@
   }
 
   // Public API
-  window.Voice = { init, toggle, setMicDeviceId };
+  function setAnnouncements(on){ announcements = !!on; try{ Storage?.setSettings?.({ voiceAnnouncements: announcements }); } catch{} renderHUD(); }
+  function setProcessDelay(ms){ processDelayMs = Math.max(0, Number(ms)||0); try{ Storage?.setSettings?.({ voiceProcessDelayMs: processDelayMs }); } catch{} renderHUD(); }
+  window.Voice = { init, toggle, setMicDeviceId, setAnnouncements, setProcessDelay, setPttMode };
 })();
