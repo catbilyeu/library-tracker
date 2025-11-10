@@ -64,6 +64,8 @@
 
   async function onVoiceIntent({ type, payload }){
     switch(type){
+      case 'pager:next': publish('pager:next', {}); break;
+      case 'pager:prev': publish('pager:prev', {}); break;
       case 'modal:close': {
         // Close inline overlays (including those injected by Modal or remove flow)
         const overlays = Array.from(document.querySelectorAll('.inline-overlay'));

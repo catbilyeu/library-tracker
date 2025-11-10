@@ -35,7 +35,7 @@
       const borrowed = fmt(h.borrowedAt);
       const returned = h.returnedAt ? fmt(h.returnedAt) : null;
       const status = returned ? 'Returned' : 'Out';
-      const dateRange = returned ? `${borrowed} – ${returned}` : `${borrowed} –`;
+      const dateRange = returned ? `${borrowed} – ${returned}` : `${borrowed}`;
       const line = `${borrower} | ${status} | ${dateRange}`;
       return '<li data-idx="'+idx+'"><span class="row-line">'+line+'</span><span class="row-actions">'+
              '<button type="button" class="mini edit" aria-label="Edit entry">Edit</button>'+

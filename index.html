@@ -21,8 +21,8 @@
         <button id="btn-add" aria-label="Add ISBN">Add</button>
       </div>
       <button id="btn-scan" aria-label="Open scanner">Scan</button>
-      <button id="toggle-handsfree" aria-pressed="false">Hands-Free</button>
-      <button id="toggle-voice" aria-pressed="false">Voice</button>
+      <button id="toggle-handsfree" aria-pressed="false" aria-label="Motion cursor" title="Motion cursor">✋</button>
+      <button id="toggle-voice" aria-pressed="false" aria-label="Voice" title="Voice">🎤</button>
       
       <div class="menu" id="hamburger">
         <button class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-haspopup="true">☰</button>
@@ -70,5 +70,10 @@
   <script src="js/voice.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/main.js"></script>
+  <!-- Pager controls -->
+  <div id="pager" class="pager" aria-label="Pagination controls" hidden>
+    <button id="btn-prev-page" class="pager-btn" aria-label="Previous page" title="Previous page">⟨</button>
+    <button id="btn-next-page" class="pager-btn" aria-label="Next page" title="Next page">⟩</button>
+  </div>
 </body>
 </html>

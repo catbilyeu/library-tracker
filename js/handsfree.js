@@ -1,8 +1,10 @@
 (function(){
   let publish=()=>{}; let subscribe=()=>{}; let isEnabled=false;
   let cursor=null; let overlay=null; let video=null; let stream=null; let hands=null;
-  let lastClick=0; let hudEl=null; let stopBtn=null; let rafId=null;
+  let lastClick=0; let hudEl=null; let rafId=null;
   let starting=false; let restartTimer=null;
+  // Watchdog and hover state
+  let lastResultsTs=0; let watchdogId=null; let lastHoverEl=null;
 
   // Sensitivity/config
   let deviceId=null; let settingsLoaded=false;
@@ -49,6 +51,7 @@
 
   function onResults(results){
     if(!isEnabled) return;
+    lastResultsTs = performance.now();
     const now = performance.now();
     if(lastFrameTs){ const inst = 1000/(now-lastFrameTs); fpsAvg = fpsAvg? (fpsAvg*0.8 + inst*0.2) : inst; }
     lastFrameTs = now;
@@ -60,7 +63,8 @@
 
     // Flip X to disable the "opposite movement" effect from non-mirrored camera coordinates
     const normX = mirrorX ? (1 - tip.x) : tip.x;
-    const x = normX * window.innerWidth; const y = tip.y * window.innerHeight;
+    const x = Math.max(0, Math.min(window.innerWidth, normX * window.innerWidth));
+    const y = Math.max(0, Math.min(window.innerHeight, tip.y * window.innerHeight));
     smoothMove(x,y);
 
     const open = (tip.y < mid6.y && tip12.y < mid10.y);
@@ -81,6 +85,12 @@
     const stepY = Math.max(Math.min(dy, cfg.maxStep), -cfg.maxStep);
     prevX = prevX + stepX * cfg.alpha; prevY = prevY + stepY * cfg.alpha;
     cursor.style.left = prevX+'px'; cursor.style.top = prevY+'px';
+    // Motion hover affordance to make targets more obvious
+    try{
+      const el = document.elementFromPoint(Math.round(prevX), Math.round(prevY));
+      if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
+      if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
+    }catch{}
   }
 
   function setupOverlay(){
@@ -92,12 +102,6 @@
     }
     hudEl = overlay.querySelector('.hf-hud');
     if(!hudEl){ hudEl = document.createElement('div'); hudEl.className='hf-hud'; overlay.appendChild(hudEl); }
-    stopBtn = overlay.querySelector('.hf-stop');
-    if(!stopBtn){
-      stopBtn = document.createElement('button'); stopBtn.type='button'; stopBtn.className='hf-stop'; stopBtn.title='Stop Hands-Free'; stopBtn.setAttribute('aria-label','Stop Hands-Free'); stopBtn.textContent='Stop';
-      stopBtn.addEventListener('click', (e)=>{ e.stopPropagation(); publish('handsfree:toggle', { enabled:false }); });
-      overlay.appendChild(stopBtn);
-    }
   }
 
   async function start(){
@@ -147,15 +151,34 @@
 
     Utils.toast('Hands-free is on');
     starting=false;
+
+    // Watchdog: restart pipeline if no frames processed for 5s
+    if(watchdogId){ try{ clearInterval(watchdogId); }catch{} watchdogId=null; }
+    watchdogId = setInterval(()=>{
+      if(!isEnabled) return;
+      const gap = performance.now() - lastResultsTs;
+      if(gap > 5000){
+        console.warn('[motion-cursor] Watchdog restart after', Math.round(gap),'ms without frames');
+        stop().then(start);
+      }
+    }, 3000);
+
+    // If camera track ends (device sleep / permission flip), restart
+    try{
+      const tracks = stream?.getVideoTracks?.() || [];
+      for(const t of tracks){ t.onended = ()=>{ if(isEnabled){ console.warn('[motion-cursor] video track ended, restarting'); stop().then(start); } }; }
+    }catch{}
   }
 
   async function stop(){
     if(restartTimer){ clearTimeout(restartTimer); restartTimer=null; }
+    if(watchdogId){ try{ clearInterval(watchdogId); }catch{} watchdogId=null; }
     overlay = document.getElementById('handsfree-overlay');
     if(overlay) overlay.hidden = true;
     if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
     try{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } } catch{}
     try{ if(video){ try{ await video.pause(); } catch{} try{ video.srcObject=null; } catch{} video.remove(); } video=null; } catch{}
+    try{ if(lastHoverEl){ lastHoverEl.classList.remove('hf-hover'); lastHoverEl=null; } }catch{}
     starting=false;
   }
 

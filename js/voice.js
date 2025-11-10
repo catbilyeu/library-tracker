@@ -75,13 +75,17 @@
   }
 
   function parseIntent(text){
-    const s = (text||'').trim().toLowerCase().replace(/[.,!?]+$/,'');
+    const s = (text||'').trim().replace(/[.,!?]+$/,'');
 
     // Generic confirm for pending actions (e.g., remove)
     if(/^(yes|confirm|remove)$/.test(s)) return { type:'confirm:generic', payload:{} };
 
     // close/dismiss/cancel modal or overlays
     if(/^(close|dismiss|cancel)$/.test(s)) return { type:'modal:close', payload:{} };
+
+    // pagination: next/previous page
+    if(/^(next\s*page|go\s*(to\s*)?the\s*next\s*page|go\s*next)$/i.test(s)) return { type:'pager:next', payload:{} };
+    if(/^(previous\s*page|prev\s*page|go\s*(back\s*to\s*the\s*)?previous\s*page|go\s*back|go\s*previous|go\s*to\s*the\s*previous\s*page)$/i.test(s)) return { type:'pager:prev', payload:{} };
 
     // search/find/lookup
     let m = s.match(/^(search|find|look\s*up|lookup)\s+(.+)/i);

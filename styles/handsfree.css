@@ -1,8 +1,6 @@
-#handsfree-overlay{position:fixed;inset:0;pointer-events:none;z-index:2000}
+#handsfree-overlay{position:fixed;inset:0;pointer-events:none;z-index:5000}
 .hf-cursor{width:18px;height:18px;border:2px solid var(--accent);border-radius:50%;position:absolute;transform:translate(-50%,-50%);box-shadow:0 0 0 2px rgba(79,163,255,.25)}
 .hf-hover{outline:2px solid var(--accent);outline-offset:2px}
 
-/* HUD and Stop button */
+/* HUD */
 #handsfree-overlay .hf-hud{position:fixed;top:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;color:var(--fg);opacity:.9}
-#handsfree-overlay .hf-stop{position:fixed;bottom:12px;right:12px;pointer-events:auto;background:var(--danger, #b33);color:#fff;border:none;border-radius:999px;padding:8px 12px;box-shadow:0 4px 12px rgba(0,0,0,.35);cursor:pointer}
-#handsfree-overlay .hf-stop:hover{filter:brightness(1.1)}
