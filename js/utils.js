@@ -71,6 +71,64 @@
       img.dataset.fallbackTried='done';
       img.src = `https://placehold.co/320x480?text=No+Cover`;
     },
+    
+    // Date phrase parsing: returns a timestamp at local midnight for recognizable phrases
+    // Supports:
+    // - Numeric: 11/07, 11/7, 11/07/2025
+    // - Month name: Nov 7, November 7 (optional year)
+    // - Keywords: today, yesterday, tomorrow
+    // - Relative weekday: last Monday, next Tue(sday), this Friday
+    parseDatePhrase(input){
+      if(!input || typeof input !== 'string') return null;
+      const s = input.trim().toLowerCase();
+      const toMidnight = (d)=>{ const dt=new Date(d.getFullYear(), d.getMonth(), d.getDate()); return dt.getTime(); };
+      const now = new Date();
+
+      // Keywords
+      if(s === 'today') return toMidnight(now);
+      if(s === 'yesterday') return toMidnight(new Date(now.getFullYear(), now.getMonth(), now.getDate()-1));
+      if(s === 'tomorrow') return toMidnight(new Date(now.getFullYear(), now.getMonth(), now.getDate()+1));
+
+      // Numeric m/d[/yyyy]
+      let m = s.match(/^([0-9]{1,2})[\/\-]([0-9]{1,2})(?:[\/\-]([0-9]{2,4}))?$/);
+      if(m){
+        let month = parseInt(m[1],10); let day = parseInt(m[2],10); let year = m[3]? parseInt(m[3],10) : now.getFullYear();
+        if(year < 100) year += 2000; // interpret 2-digit years as 2000+
+        if(month>=1 && month<=12 && day>=1 && day<=31){ const d = new Date(year, month-1, day); if(!isNaN(d)) return toMidnight(d); }
+      }
+
+      // Month name
+      const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+      m = s.match(/^([a-zA-Z]+)\s+([0-9]{1,2})(?:,?\s*([0-9]{2,4}))?$/);
+      if(m){
+        const mi = months.findIndex(name=> name.startsWith(m[1].toLowerCase()));
+        if(mi>=0){ const day = parseInt(m[2],10); let year = m[3]? parseInt(m[3],10) : now.getFullYear(); if(year<100) year+=2000; const d=new Date(year, mi, day); if(!isNaN(d)) return toMidnight(d); }
+      }
+
+      // Relative weekday: last|next|this <weekday>
+      m = s.match(/^(last|next|this)\s+([a-zA-Z]+)$/);
+      if(m){
+        const ref = m[1]; const wd = m[2].toLowerCase();
+        const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+        const target = weekdays.findIndex(w=> w.startsWith(wd));
+        if(target>=0){
+          const cur = now.getDay();
+          let diff = target - cur; // how many days to add
+          if(ref==='this'){
+            // If target already passed this week, keep it in the same week by moving backwards/forwards to current week's occurrence
+            // We interpret "this" as the occurrence within the current week (Sun-Sat)
+          } else if(ref==='next'){
+            if(diff <= 0) diff += 7;
+          } else if(ref==='last'){
+            if(diff >= 0) diff -= 7;
+          }
+          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+          return toMidnight(d);
+        }
+      }
+
+      return null;
+    },
   };
   window.Utils = Utils;
 })();

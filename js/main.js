@@ -71,7 +71,9 @@
         const book = results[0];
         const borrower = payload.borrower;
         if(!borrower){ speak('Missing borrower name'); return; }
-        book.borrowHistory = book.borrowHistory||[]; book.borrowHistory.push({ borrower, borrowedAt: Date.now() });
+        let borrowedAt = payload.borrowedAt;
+        if(typeof borrowedAt !== 'number' || isNaN(borrowedAt)) borrowedAt = Date.now();
+        book.borrowHistory = book.borrowHistory||[]; book.borrowHistory.push({ borrower, borrowedAt });
         await Storage.putBook(book); speak(`Lent ${book.title} to ${borrower}`); break; }
       case 'return': {
         const results = await resolveBooks(payload.target);

@@ -85,9 +85,17 @@
     m = s.match(/^(add|scan)\s+(isbn|book)?\s*([0-9xX\-\s]{10,17})/i);
     if(m){ const isbn13 = isbnTo13(m[3]); if(isbn13) return { type:'book:add', payload:{ isbn13 } }; }
 
-    // lend/loan X to Y
-    m = s.match(/^(lend|loan)\s+(.+?)\s+(?:to|->)\s+(.+)/i);
-    if(m) return { type:'lend', payload:{ target: m[2], borrower: m[3] } };
+    // lend/loan X to Y [for <datePhrase>]
+    // Examples: "lend dune to carlie for 11/07", "lend book to Carlie for last Monday"
+    m = s.match(/^(lend|loan)\s+(.+?)\s+(?:to|->)\s+([^]+?)(?:\s+for\s+(.+))?$/i);
+    if(m){
+      const borrower = (m[3]||'').trim();
+      const target = (m[2]||'').trim();
+      const datePhrase = (m[4]||'').trim();
+      let borrowedAt = null;
+      if(datePhrase){ borrowedAt = Utils.parseDatePhrase(datePhrase); }
+      return { type:'lend', payload:{ target, borrower, borrowedAt } };
+    }
 
     // return/check in/give back X
     m = s.match(/^(return|check\s*in|give\s*back)\s+(.+)/i);
@@ -114,7 +122,10 @@
       case 'search': return `Searching for ${intent.payload.q}`;
       case 'scanner:open': return 'Opening scanner';
       case 'book:add': return `Adding ISBN ${intent.payload.isbn13}`;
-      case 'lend': return `Lending ${intent.payload.target} to ${intent.payload.borrower}`;
+      case 'lend': {
+        const p=intent.payload; const when = p.borrowedAt? new Date(p.borrowedAt).toLocaleDateString() : 'today';
+        return `Lending ${p.target} to ${p.borrower} for ${when}`;
+      }
       case 'return': return `Returning ${intent.payload.target}`;
       case 'remove': return `Removing ${intent.payload.target}`;
       case 'handsfree:toggle': return `Hands-free ${intent.payload.enabled?'on':'off'}`;

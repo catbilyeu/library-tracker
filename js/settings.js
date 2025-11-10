@@ -61,14 +61,18 @@
                 <input id="hf-enabled" type="checkbox" ${s.handsFreeEnabled? 'checked':''} />
               </div>
               <div class="settings-row">
+                <label for="hf-mirror">Mirror cursor (recommended for front camera)</label>
+                <input id="hf-mirror" type="checkbox" ${s.handsFreeMirrorX!==false? 'checked':''} />
+              </div>
+              <div class="settings-row">
                 <label for="camera-select">Camera</label>
                 <select id="camera-select" aria-label="Camera"></select>
               </div>
               <div class="settings-row">
                 <label for="hf-sens">Sensitivity</label>
                 <div class="range-wrap">
-                  <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.6}" />
-                  <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.6))*100))}%</span>
+                  <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.25}" />
+                  <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.25))*100))}%</span>
                 </div>
               </div>
             </div>
@@ -110,7 +114,8 @@
         voiceEnabled: qs(root,'#voice-enabled').checked,
         cameraDeviceId: camSel.value || '',
         micDeviceId: micSel.value || '',
-        handsFreeSensitivity: parseFloat(sens.value)
+        handsFreeSensitivity: parseFloat(sens.value),
+        handsFreeMirrorX: qs(root,'#hf-mirror').checked
       };
       try{
         const saved = await window.Storage.setSettings(next);
@@ -118,6 +123,7 @@
         try{ window.HandsFree?.setDeviceId?.(saved.cameraDeviceId); } catch{}
         try{ window.Voice?.setMicDeviceId?.(saved.micDeviceId); } catch{}
         try{ window.HandsFree?.setSensitivity?.(saved.handsFreeSensitivity); } catch{}
+        try{ window.HandsFree?.setMirrorX?.(saved.handsFreeMirrorX!==false); } catch{}
         try{ publish('handsfree:toggle', { enabled: !!saved.handsFreeEnabled }); } catch{}
         try{ publish('voice:toggle', { enabled: !!saved.voiceEnabled }); } catch{}
         // Reflect state on header toggles if present

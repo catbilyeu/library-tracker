@@ -16,13 +16,17 @@
     const maxStep = 20 + s*25;              // px/frame cap (20 -> 45)
     return { s, deadzone, alpha, debounceMs, maxStep };
   }
-  let cfg = mapSensitivity(0.6);
+  // Default sensitivity set to 25% for steadier cursor
+  let cfg = mapSensitivity(0.25);
+  // Mirror X by default so cursor follows your hand naturally with a front camera
+  let mirrorX = true;
 
   async function loadSettingsIfNeeded(){
     if(settingsLoaded) return;
     try{
       const s = await Storage.getSettings();
       if(typeof s.handsFreeSensitivity === 'number') cfg = mapSensitivity(s.handsFreeSensitivity);
+      if(typeof s.handsFreeMirrorX === 'boolean') mirrorX = !!s.handsFreeMirrorX;
       if(s.handsFreeDeviceId) deviceId = s.handsFreeDeviceId;
       settingsLoaded = true;
     } catch(e){ /* ignore */ }
@@ -54,7 +58,9 @@
     const tip = lm[8]; // index fingertip
     const mid6 = lm[6]; const mid10 = lm[10]; const tip12 = lm[12];
 
-    const x = tip.x * window.innerWidth; const y = tip.y * window.innerHeight;
+    // Flip X to disable the "opposite movement" effect from non-mirrored camera coordinates
+    const normX = mirrorX ? (1 - tip.x) : tip.x;
+    const x = normX * window.innerWidth; const y = tip.y * window.innerHeight;
     smoothMove(x,y);
 
     const open = (tip.y < mid6.y && tip12.y < mid10.y);
@@ -162,9 +168,10 @@
   }
 
   function setSensitivity(v){ cfg = mapSensitivity(v); try{ Storage?.setSettings?.({ handsFreeSensitivity: cfg.s }); } catch{} }
+  function setMirrorX(v){ mirrorX = !!v; try{ Storage?.setSettings?.({ handsFreeMirrorX: mirrorX }); } catch{} }
   function setDeviceId(id){ deviceId = id || null; try{ Storage?.setSettings?.({ handsFreeDeviceId: deviceId }); } catch{} if(isEnabled){ stop().then(start); } }
 
   function init(api){ publish=api.publish; subscribe=api.subscribe; subscribe('handsfree:toggle', toggle); }
 
-  window.HandsFree = { init, toggle, setSensitivity, setDeviceId };
+  window.HandsFree = { init, toggle, setSensitivity, setDeviceId, setMirrorX };
 })();
