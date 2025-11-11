@@ -25,7 +25,7 @@
     return dbp;
   }
 
-  const Storage = {
+  const StorageLocal = {
     init(publishFn){ publish = publishFn || (()=>{}); return this; },
     async getAllBooks(){ const db = await getDB(); return db.getAll('books'); },
     async getBook(isbn13){ const db = await getDB(); return db.get('books', isbn13); },
@@ -43,5 +43,22 @@
     async setSettings(partial){ const db = await getDB(); const cur = (await this.getSettings()) || {}; const next = { ...cur, ...partial }; await db.put('settings', next, 'settings'); return next; }
   };
 
+  // Broker that can swap between local and cloud storage backends at runtime
+  const Storage = {
+    _impl: null,
+    init(publishFn){ StorageLocal.init(publishFn); this._impl = StorageLocal; return this; },
+    setBackend(impl){ this._impl = impl || StorageLocal; return this; },
+    get backend(){ return this._impl || StorageLocal; },
+    async getAllBooks(){ return this.backend.getAllBooks(); },
+    async getBook(isbn13){ return this.backend.getBook(isbn13); },
+    async putBook(book){ return this.backend.putBook(book); },
+    async deleteBook(isbn13){ return this.backend.deleteBook(isbn13); },
+    async bulkPut(books){ return this.backend.bulkPut(books); },
+    async exportAll(){ return this.backend.exportAll(); },
+    async getSettings(){ return this.backend.getSettings(); },
+    async setSettings(partial){ return this.backend.setSettings(partial); }
+  };
+
+  window.StorageLocal = StorageLocal;
   window.Storage = Storage;
 })();

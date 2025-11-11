@@ -31,6 +31,14 @@
     const voiceBtn = document.getElementById('toggle-voice');
     voiceBtn.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); });
     document.getElementById('btn-settings').addEventListener('click', ()=> { closeMenu(); Settings.open(); });
+    // Auth button
+    const loginBtn = document.getElementById('btn-login');
+    if(loginBtn){ loginBtn.addEventListener('click', async ()=>{
+      try{
+        if(Firebase?.getUser?.()){ await Firebase.signOut(); }
+        else { await Firebase.signIn(); }
+      }catch(e){ Utils.toast('Auth error', { type:'error' }); }
+    }); }
     // Sort select
     const sortSel = document.getElementById('sort-select');
     if(sortSel){
@@ -293,6 +301,24 @@
   async function init(){
     // Init modules
     Storage.init(publish);
+    // Firebase init
+    try{ await Firebase.init({ publish, subscribe }); }catch{}
+    // Switch Storage backend based on auth state
+    subscribe('auth:state', async ({ user })=>{
+      const loginBtn = document.getElementById('btn-login');
+      const overlay = document.getElementById('auth-overlay');
+      if(user){
+        Storage.setBackend(Firebase.CloudStorage);
+        if(loginBtn){ loginBtn.textContent = 'Sign out'; loginBtn.title = `Signed in as ${user.displayName||user.email||'user'}`; }
+        if(overlay){ overlay.hidden = true; }
+        Utils.toast(`Signed in as ${user.displayName||user.email}`, { type:'ok' });
+        const all = await Storage.getAllBooks(); Search.setIndex(all); Shelves.render(all);
+      } else {
+        Storage.setBackend(window.StorageLocal);
+        if(loginBtn){ loginBtn.textContent = 'Sign in'; loginBtn.title = 'Sign in with Google'; }
+      }
+    });
+
     Shelves.init({ publish, subscribe });
     Modal.init({ publish, subscribe });
     Scanner.init({ publish, subscribe });
@@ -319,10 +345,16 @@
 
     // Wire header and events
     wireHeader();
-    subscribe('book:add', onBookAdd);
-    subscribe('scanner:detected', onScannerDetected);
-    subscribe('handsfree:click', onHandsfreeClick);
-    subscribe('voice:intent', onVoiceIntent);
+    // Auth overlay buttons
+    const authOverlay = document.getElementById('auth-overlay');
+    const authCancel = document.getElementById('btn-auth-cancel');
+    const authGoogle = document.getElementById('btn-auth-google');
+    if(authCancel){ authCancel.addEventListener('click', ()=> { authOverlay.hidden = true; }); }
+    if(authGoogle){ authGoogle.addEventListener('click', async ()=>{
+      try{ await Firebase.signIn(); authOverlay.hidden = true; } catch(e){ Utils.toast('Sign-in failed', { type:'error' }); }
+    }); }
+
+    subscribe('auth:require', ()=>{ const o=document.getElementById('auth-overlay'); if(o) o.hidden=false; });
 
     // Load initial data
     let books = await Storage.getAllBooks();

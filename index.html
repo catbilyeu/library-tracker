@@ -13,6 +13,12 @@
 </head>
 <body>
   <header class="app-header">
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="js/firebase-config.js" defer></script>
+  <script src="js/firebase.js"></script>
+
     <h1>Library Tracker</h1>
     <div class="controls">
       <select id="sort-select" aria-label="Sort books" title="Sort">
@@ -22,6 +28,7 @@
         <option value="genre">Genre (A–Z)</option>
       </select>
       <div class="search-wrap">
+      <button id="btn-login" aria-label="Sign in" title="Sign in with Google">Sign in</button>
         <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
         <button id="btn-clear-search" class="icon small" aria-label="Clear search" title="Clear search" hidden>✕</button>
         <span id="results-count" class="results-count" aria-live="polite"></span>
@@ -49,6 +56,18 @@
   <main>
     <section id="shelves" aria-live="polite"></section>
   </main>
+  <!-- Auth Overlay -->
+  <div id="auth-overlay" hidden style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999">
+    <div style="background:var(--panel-bg, #fff);color:var(--text, #222);padding:24px;border-radius:10px;min-width:280px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+      <h2 style="margin-top:0;margin-bottom:12px">Sign in</h2>
+      <p style="margin:0 0 16px">Sign in with Google to sync your library across devices.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="btn-auth-cancel" type="button">Cancel</button>
+        <button id="btn-auth-google" type="button" class="accent">Sign in with Google</button>
+      </div>
+    </div>
+  </div>
+
 
   <div id="book-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true"></div>
   <div id="scanner-overlay" hidden></div>
