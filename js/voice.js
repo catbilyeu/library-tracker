@@ -298,16 +298,34 @@
 
   async function setMicDeviceId(id){
     selectedMicDeviceId = id || null;
-    // Best-effort: acquire a stream to hint OS/browser to use this input.
+    // Do not keep the mic stream open. We only open briefly (if needed) to learn labels, then stop.
     try{
+      // Stop any previously opened stream immediately
       if(micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream=null; }
       if(!navigator.mediaDevices) return;
-      const constraints = id ? { audio: { deviceId: { exact: id } } } : { audio: true };
-      micStream = await navigator.mediaDevices.getUserMedia(constraints);
-      // Try to map deviceId to label (labels available after permission)
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const match = devices.find(d=>d.kind==='audioinput' && (d.deviceId===id || (!id && d.deviceId==='default')));
-      micLabel = match?.label || (id ? `device ${id}` : 'default');
+
+      // First, try to map the label without opening the mic (if permission already granted elsewhere)
+      try{
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const match = devices.find(d=> d.kind==='audioinput' && (d.deviceId===id || (!id && d.deviceId==='default')));
+        if(match && match.label){ micLabel = match.label; renderHUD(); return; }
+      }catch{}
+
+      // If labels are not available yet, briefly request audio to unlock labels, then stop it right away
+      let tempStream = null;
+      try{
+        const constraints = id ? { audio: { deviceId: { exact: id } } } : { audio: true };
+        tempStream = await navigator.mediaDevices.getUserMedia(constraints);
+      }catch{}
+      try{
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const match = devices.find(d=> d.kind==='audioinput' && (d.deviceId===id || (!id && d.deviceId==='default')));
+        micLabel = match?.label || (id ? `device ${id}` : 'default');
+      }catch{ micLabel = id ? `device ${id}` : 'default'; }
+      finally {
+        try{ tempStream?.getTracks?.().forEach(t=> t.stop()); }catch{}
+        tempStream = null; // ensure it is released
+      }
       renderHUD();
     }catch(e){
       Utils.toast('Unable to access selected microphone', { type:'error' });

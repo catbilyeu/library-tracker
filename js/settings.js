@@ -5,20 +5,21 @@
   function qs(root, sel){ return (root||document).querySelector(sel); }
   function qsa(root, sel){ return Array.from((root||document).querySelectorAll(sel)); }
 
-  async function ensureDeviceLabels(){
-    if(!navigator.mediaDevices?.getUserMedia) return;
-    try{
-      const stream = await navigator.mediaDevices.getUserMedia({ audio:true, video:true });
-      // stop tracks immediately
-      stream.getTracks().forEach(t=>{ try{ t.stop(); } catch{} });
-    }catch(e){ /* user may deny; it's ok */ }
-  }
-
   async function listDevices(){
     try{
       if(!navigator.mediaDevices?.enumerateDevices) return { cams:[], mics:[] };
-      try{ await ensureDeviceLabels(); }catch{}
-      const devs = await navigator.mediaDevices.enumerateDevices();
+      let devs = await navigator.mediaDevices.enumerateDevices();
+      // If labels are empty, request only the minimal permissions needed and stop immediately
+      const needAudio = devs.some(d=> d.kind==='audioinput' && !d.label);
+      const needVideo = devs.some(d=> d.kind==='videoinput' && !d.label);
+      if((needAudio || needVideo) && navigator.mediaDevices?.getUserMedia){
+        try{
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: needAudio, video: needVideo });
+          try{ stream.getTracks().forEach(t=>{ try{ t.stop(); }catch{} }); }catch{}
+          // Re-enumerate with labels now available
+          try{ devs = await navigator.mediaDevices.enumerateDevices(); }catch{}
+        }catch(e){ /* user may deny; we'll fall back to generic names */ }
+      }
       const cams = devs.filter(d=> d.kind === 'videoinput');
       const mics = devs.filter(d=> d.kind === 'audioinput');
       return { cams, mics };
