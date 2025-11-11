@@ -148,11 +148,10 @@
               h.returnedAt = returnedAt; changed=true; count++;
             }
           }
+          if(changed){ await Storage.putBook(b); }
         }
-        if(changed){ await Storage.putBook(b); }
-      }
-      if(count===0){ Utils.toast(`${borrower} has no outstanding books`, { type:'info' }); }
-      break; }
+        if(count===0){ Utils.toast(`${borrower} has no outstanding books`, { type:'info' }); }
+        break; }
       case 'borrower:return_all': {
         const borrowerRaw = (payload.borrower||'').trim(); if(!borrowerRaw) return;
         const borrower = Utils.titleCaseName ? Utils.titleCaseName(borrowerRaw) : borrowerRaw;
