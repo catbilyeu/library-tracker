@@ -77,8 +77,8 @@
   function parseIntent(text){
     const s = (text||'').trim().replace(/[.,!?]+$/,'');
 
-    // Generic confirm for pending actions (e.g., remove)
-    if(/^(yes|confirm|remove)$/.test(s)) return { type:'confirm:generic', payload:{} };
+    // Generic confirm for pending actions (e.g., remove, bulk return)
+    if(/^(yes|confirm|remove|return)$/.test(s)) return { type:'confirm:generic', payload:{} };
 
     // close/dismiss/cancel modal or overlays
     if(/^(close|dismiss|cancel)$/.test(s)) return { type:'modal:close', payload:{} };
@@ -171,11 +171,12 @@
       return { type:'lend', payload:{ target, borrower, borrowedAt } };
     }
 
-    // return/check in/give back X
-    m = s.match(/^(return|check\s*in|give\s*back)\s+(.+)/i);
-    if(m) return { type:'return', payload:{ target: m[2] } };
-
-    // remove/delete X
+    // return all books for a borrower
+    m = s.match(/^return\s+books\s+for\s+(.+)/i);
+    if(m){
+      const borrower=(m[1]||'').trim();
+      return { type:'borrower:return_all', payload:{ borrower } };
+    }
     m = s.match(/^(remove|delete|del)\s+(.+)/i);
     if(m) return { type:'remove', payload:{ target: m[2] } };
 

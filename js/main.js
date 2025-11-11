@@ -148,6 +148,55 @@
               h.returnedAt = returnedAt; changed=true; count++;
             }
           }
+      case 'borrower:return_all': {
+        const borrowerRaw = (payload.borrower||'').trim(); if(!borrowerRaw) return;
+        const borrower = Utils.titleCaseName ? Utils.titleCaseName(borrowerRaw) : borrowerRaw;
+        const all = await Storage.getAllBooks();
+        const openLoans = all.filter(b=> (b.borrowHistory||[]).some(h=> !h.returnedAt && h.borrower && h.borrower.toLowerCase().trim()===borrower.toLowerCase().trim()));
+        // Build confirmation overlay with list of titles
+        const overlay = document.createElement('div'); overlay.className = 'inline-overlay overlay-pending-bulk-return'; overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true');
+        const dialog = document.createElement('div'); dialog.className = 'dialog';
+        const h3 = document.createElement('h3'); h3.id = 'bulk-return-title'; h3.textContent = `Return these books for ${borrower}?`;
+        const list = document.createElement('ul'); list.style.maxHeight='40vh'; list.style.overflow='auto';
+        if(openLoans.length){
+          openLoans.forEach(b=>{ const li=document.createElement('li'); li.textContent = b.title || '(Untitled)'; list.appendChild(li); });
+        } else {
+          const li=document.createElement('li'); li.textContent = '(No outstanding books)'; list.appendChild(li);
+        }
+        const actions=document.createElement('div'); actions.className='actions';
+        const cancelBtn=document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='Cancel';
+        const confirmBtn=document.createElement('button'); confirmBtn.type='button'; confirmBtn.className='accent'; confirmBtn.textContent='Return';
+        actions.appendChild(cancelBtn); actions.appendChild(confirmBtn);
+        dialog.appendChild(h3); dialog.appendChild(list); dialog.appendChild(actions);
+        overlay.appendChild(dialog); document.body.appendChild(overlay);
+        confirmBtn.focus();
+        const cleanup=()=> overlay.remove();
+        overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
+        cancelBtn.onclick = cleanup;
+        confirmBtn.onclick = async ()=>{
+          let count=0; const allBooks = await Storage.getAllBooks();
+          for(const b of allBooks){
+            const open = (b.borrowHistory||[]).find(h=> h.borrower && h.borrower.toLowerCase().trim()===borrower.toLowerCase().trim() && !h.returnedAt);
+            if(open){ open.returnedAt = Date.now(); await Storage.putBook(b); count++; }
+          }
+          cleanup();
+          Utils.toast(`Returned ${count} book${count===1?'':'s'} for ${borrower}`, { type:'ok' });
+        };
+        // Store context for voice confirmation
+        window.__voicePendingConfirm = { action:'bulkReturn', payload:{ borrower } };
+        // Speak announcements prompt if enabled
+        try{
+          const settings = await Storage.getSettings();
+          if(settings.voiceAnnouncements!==false){
+            const count = openLoans.length;
+            const msg = `Return ${count} book${count===1?'':'s'} for ${borrower}?`;
+            const utter = new SpeechSynthesisUtterance(msg);
+            utter.lang = navigator.language || 'en-US';
+            window.speechSynthesis?.speak(utter);
+          }
+        }catch{}
+        break; }
+
           if(changed){ await Storage.putBook(b); }
         }
         if(count===0){ Utils.toast(`${borrower} has no outstanding books`, { type:'info' }); }
@@ -216,6 +265,17 @@
       case 'confirm:generic': {
         const pending = window.__voicePendingConfirm;
         if(!pending) return;
+        // Handle bulk return
+        if(pending.action==='bulkReturn'){
+          const borrower = pending.payload.borrower;
+          const all = await Storage.getAllBooks();
+          let count=0;
+          for(const b of all){
+            const open = (b.borrowHistory||[]).find(h=> h.borrower && h.borrower.toLowerCase().trim()===borrower.toLowerCase().trim() && !h.returnedAt);
+            if(open){ open.returnedAt = Date.now(); await Storage.putBook(b); count++; }
+          }
+          Utils.toast(`Returned ${count} book${count===1?'':'s'} for ${borrower}`, { type:'ok' });
+        }
         // Only handle removeBook for now
         if(pending.action==='removeBook'){
           const overlay = document.querySelector('.overlay-pending-remove');
