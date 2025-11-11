@@ -1,6 +1,6 @@
 #shelves{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .book-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;position:relative}
-.book-card img{width:100%;aspect-ratio:2/3;object-fit:cover;background:#0a121f}
+.book-card img{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--image-bg)}
 .book-card .meta{padding:8px 10px;min-height:56px}
 .book-card .title{font-size:14px;line-height:1.3;font-weight:600;margin:0 0 4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .book-card .authors{font-size:12px;line-height:1.2;color:var(--muted);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

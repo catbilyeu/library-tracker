@@ -307,6 +307,12 @@
       try{ Voice.setAnnouncements?.(s.voiceAnnouncements!==false); }catch{}
       if(typeof s.voiceProcessDelayMs === 'number') try{ Voice.setProcessDelay?.(s.voiceProcessDelayMs); }catch{}
       try{ Voice.setPttMode?.(!!s.voicePttOnly); }catch{}
+      // Apply theme
+      try{
+        const t = s.theme || 'dark';
+        if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
+        else document.documentElement.removeAttribute('data-theme');
+      }catch{}
       // Do not touch aria-pressed for header buttons here
     }catch{}
     Settings.init({ publish, subscribe });
@@ -320,10 +326,15 @@
 
     // Load initial data
     let books = await Storage.getAllBooks();
-    // Bootstrap import if empty and bundled sample exists
+    // Render immediately (even if empty) to avoid blocking on bootstrap fetch
+    Search.setIndex(books);
+    Shelves.render(books);
+    // If empty, try to bootstrap in the background with a short timeout
     if((books?.length||0) === 0){
+      const controller = new AbortController();
+      const t = setTimeout(()=> controller.abort(), 2500);
       try{
-        const res = await fetch('real-books-50.json', { cache:'no-store' });
+        const res = await fetch('real-books-50.json', { cache:'no-store', signal: controller.signal });
         if(res.ok){
           const data = await res.json();
           const list = Object.values(data.books||{});
@@ -331,12 +342,13 @@
             await Storage.bulkPut(list);
             Utils.toast(`Imported ${list.length} books (bootstrap)`, { type:'ok' });
             books = await Storage.getAllBooks();
+            Search.setIndex(books);
+            Shelves.render(books);
           }
         }
-      }catch(e){ /* ignore */ }
+      }catch(e){ /* ignore bootstrap issues */ }
+      finally{ clearTimeout(t); }
     }
-    Search.setIndex(books);
-    Shelves.render(books);
   }
 
   // Register Service Worker only on HTTPS and non-localhost (avoid cache headaches in dev)

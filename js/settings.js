@@ -49,11 +49,23 @@
           <div class="settings-header">
             <div>
               <h2 id="settings-title">Settings</h2>
-              <div class="muted">Choose input devices and hands-free sensitivity</div>
+              <div class="muted">Choose input devices, theme, and hands-free sensitivity</div>
             </div>
             <button class="icon close" id="settings-close" aria-label="Close">✕</button>
           </div>
           <div class="settings-body">
+            <div class="settings-section">
+              <h3>Appearance</h3>
+              <div class="settings-row">
+                <label for="theme-select">Theme</label>
+                <select id="theme-select" aria-label="Theme">
+                  <option value="dark" ${s.theme==='dark' || !s.theme ? 'selected' : ''}>Dark</option>
+                  <option value="light" ${s.theme==='light' ? 'selected' : ''}>Light (Cream + Browns)</option>
+                  <option value="earthy" ${s.theme==='earthy' ? 'selected' : ''}>Earthy (Sage Greens)</option>
+                  <option value="pastel" ${s.theme==='pastel' ? 'selected' : ''}>Pastel (Pink + Rainbow)</option>
+                </select>
+              </div>
+            </div>
             <div class="settings-section">
               <h3>Hands-Free</h3>
               <div class="settings-row">
@@ -135,7 +147,8 @@
         micDeviceId: micSel.value || '',
         handsFreeSensitivity: parseFloat(sens.value),
         handsFreeMirrorX: qs(root,'#hf-mirror').checked,
-        voiceProcessDelayMs: parseInt(vDelay.value,10)
+        voiceProcessDelayMs: parseInt(vDelay.value,10),
+        theme: (qs(root,'#theme-select')?.value || 'dark')
       };
       try{
         const saved = await window.Storage.setSettings(next);
@@ -147,6 +160,14 @@
         try{ window.Voice?.setPttMode?.(!!saved.voicePttOnly); } catch{}
         try{ window.Voice?.setAnnouncements?.(saved.voiceAnnouncements!==false); } catch{}
         try{ window.Voice?.setProcessDelay?.(saved.voiceProcessDelayMs); } catch{}
+        // Apply theme immediately
+        try{
+          if(saved.theme && saved.theme !== 'dark'){
+            document.documentElement.setAttribute('data-theme', saved.theme);
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+        }catch{}
         // Do not change header toggle UI state here; reflect actual runtime state only when user toggles
         Utils.toast('Settings applied', { type:'ok' });
         close();

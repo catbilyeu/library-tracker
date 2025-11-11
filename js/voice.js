@@ -23,12 +23,11 @@
   function ensureHUD(){
     if(hud) return;
     hud = document.createElement('div');
-    hud.style.cssText = [
-      'position:fixed','left:16px','bottom:16px','padding:8px 10px','border:1px solid var(--border)',
-      'border-radius:10px','background:rgba(20,32,51,.85)','color:var(--fg)','z-index:3000','max-width:60vw',
-      'font-size:12px','line-height:1.35','opacity:.95','backdrop-filter:saturate(1.5) blur(4px)'
-    ].join(';');
+    hud.className = 'voice-hud';
     hud.setAttribute('role','status');
+    hud.innerHTML = `
+      <div class="hud-status" aria-live="polite"></div>
+    `;
     document.body.appendChild(hud);
     renderHUD();
   }
@@ -40,7 +39,8 @@
     else if(status==='processing') statusDot='🟡';
     const mic = micLabel ? ` • mic: ${micLabel}` : '';
     const transcript = (finalText || interimText) ? `\n${finalText || interimText}` : '\nPress and hold Space to talk';
-    hud.textContent = `[${statusDot} ${status}]${mic}${transcript}`;
+    const statusEl = hud.querySelector('.hud-status');
+    if(statusEl){ statusEl.textContent = `[${statusDot} ${status}]${mic}${transcript}`; }
   }
 
   function isEditableTarget(el){
