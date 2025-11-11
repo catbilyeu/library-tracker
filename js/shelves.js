@@ -1,23 +1,35 @@
 (function(){
   let publish=()=>{}; let subscribe=()=>{}; let books = [];
   // Pagination state
-  let pageIndex = 0; let pageSize = 0; let cols=1; let rows=1;
+  let pageIndex = 0; let pageSize = 0; let cols=1; let rows=1; let pages=[];
   const el = () => document.getElementById('shelves');
   const pagerEl = () => document.getElementById('pager');
   const prevBtn = () => document.getElementById('btn-prev-page');
   const nextBtn = () => document.getElementById('btn-next-page');
 
-  function card(b){
-    const img = b.coverUrl || `https://covers.openlibrary.org/b/isbn/${b.isbn13}-M.jpg`;
-    return `<article class="book-card" data-isbn="${b.isbn13}" tabindex="0" aria-label="${b.title}">
-      <img loading="lazy" src="${img}" data-isbn="${b.isbn13}" onerror="Utils.coverErr(this)" alt="Cover of ${b.title||'Unknown'}" />
-      <div class="meta">
-        <h3 class="title">${b.title||'(Untitled)'}</h3>
-        <p class="authors">${(b.authors||[]).join(', ')}</p>
-      </div>
-    </article>`;
+  function getPrimarySeries(b){
+    if(!Array.isArray(b.series)) return '';
+    const firstNonEdition = b.series.find(s => s && !Utils.isEditionSeries(s));
+    return firstNonEdition || '';
   }
 
+  function card(b){
+    const img = b.coverUrl || `https://covers.openlibrary.org/b/isbn/${b.isbn13}-M.jpg`;
+    const seriesLabel = Utils.extractSeriesLabelFromTitle(b.title) || getPrimarySeries(b);
+    const series = seriesLabel ? `<div class=\"series\">${seriesLabel}</div>` : '';
+    const volMatch = (b.title||'').match(/\b(book|bk|vol|volume)\s*(\d+([\.-]\d+)?)\b/i);
+    const volume = volMatch ? `<div class=\"series\">Vol ${volMatch[2]}</div>` : '';
+    return `<article class=\"book-card\" data-isbn=\"${b.isbn13}\" tabindex=\"0\" aria-label=\"${b.title}\">\n      <img loading=\"lazy\" src=\"${img}\" data-isbn=\"${b.isbn13}\" onerror=\"Utils.coverErr(this)\" alt=\"Cover of ${b.title||'Unknown'}\" />\n      <div class=\"meta\">\n        <h3 class=\"title\">${b.title||'(Untitled)'}<\/h3>\n        ${series || volume}\n        <p class=\"authors\">${(b.authors||[]).join(', ')}<\/p>\n      <\/div>\n    <\/article>`;
+  }
+
+  function seriesKey(b){
+    if(b.normalizedSeries) return b.normalizedSeries;
+    const fromField = getPrimarySeries(b);
+    const normField = Utils.normalizeSeriesName(fromField);
+    if(normField) return normField;
+    const guessed = Utils.guessSeriesFromTitle(b.title||'');
+    return guessed ? Utils.normalizeSeriesName(guessed) : '';
+  }
   // Event delegation for cards
   function attachDelegatedHandlers(root){
     if(!root || root.dataset.handlersAttached === '1') return;
@@ -67,9 +79,11 @@
 
   function updatePager(){
     const p = pagerEl(); if(!p) return;
-    const total = books.length; const needed = total > pageSize;
+    const totalPages = (Array.isArray(pages) && pages.length) ? pages.length : 1;
+    const needed = totalPages > 1;
     p.hidden = !needed;
-    const maxPage = Math.max(0, Math.ceil(total / pageSize) - 1);
+    const maxPage = Math.max(0, totalPages - 1);
+    pageIndex = clamp(pageIndex, 0, maxPage);
     const atStart = pageIndex <= 0; const atEnd = pageIndex >= maxPage;
     const prev = prevBtn(); const next = nextBtn();
     if(prev){ prev.disabled = atStart; }
@@ -79,18 +93,44 @@
   function renderPage(){
     const root = el(); if(!root) return;
     if(!books || books.length===0){ root.innerHTML = `<div class="empty-state">No books yet. Add with Scan or Add ISBN.</div>`; updatePager(); return; }
-    const totalPages = Math.max(1, Math.ceil(books.length / pageSize));
-    pageIndex = clamp(pageIndex, 0, totalPages - 1);
-    const start = pageIndex * pageSize; const end = Math.min(start + pageSize, books.length);
-    root.innerHTML = books.slice(start, end).map(card).join('');
-    attachDelegatedHandlers(root);
-    updatePager();
+    // Build and render via grouped pagination (preserves series boundaries)
+    render();
   }
 
   function render(list){
-    if(Array.isArray(list)) { books = list; pageIndex = 0; }
-    computePageSize();
-    renderPage();
+    // Update local list
+    if(Array.isArray(list)) { books = list.slice(); } else { books = books||[]; }
+
+    // Ensure we have a current pageSize
+    if(!pageSize || pageSize <= 0){ computePageSize(); }
+
+    const mode = (window.__sortMode || 'series');
+
+    // New angle: keep sorting and pagination simple. Do not group by author/series.
+    // Just sort the flat list by the selected mode and then paginate sequentially.
+    const sorted = (typeof applySortMode === 'function') ? applySortMode(books, mode) : books.slice();
+
+    // Build pages by chunking the sorted list
+    pages = [];
+    if(sorted.length === 0){
+      pages = [[]];
+    } else {
+      for(let i=0;i<sorted.length;i+=pageSize){
+        pages.push(sorted.slice(i, i+pageSize));
+      }
+    }
+
+    // Clamp and render requested page
+    pageIndex = clamp(pageIndex, 0, Math.max(0, pages.length-1));
+
+    const root = el(); if(!root) return;
+    const pageItems = pages[pageIndex] || [];
+    const out = pageItems.map(b=> card(b)).join('');
+
+    root.innerHTML = out || `<div class="empty-state">No books yet. Add with Scan or Add ISBN.</div>`;
+    attachDelegatedHandlers(root);
+    updatePager();
+    return;
   }
 
   function nextPage(){ pageIndex++; renderPage(); }
@@ -133,3 +173,50 @@
 
   window.Shelves = { init, render };
 })();
+  function applySortMode(list, mode){
+    const arr = list.slice();
+    const titleKey = (b)=> String(b.title||'').toLowerCase();
+    const authorKey = (b)=> String((b.authors&&b.authors[0])||'').toLowerCase();
+    const seriesKeyFn = (b)=>{
+      const s = Utils.normalizeSeriesName(Utils.primarySeries(b.series)||'') || Utils.guessSeriesFromTitle(b.title||'') || '';
+      return s;
+    };
+    const genreKey = (b)=> String((b.subjects&&b.subjects[0])||'').toLowerCase();
+    switch(mode){
+      case 'title':
+        arr.sort((a,b)=> titleKey(a)<titleKey(b)?-1:titleKey(a)>titleKey(b)?1:0); break;
+      case 'author':
+        arr.sort((a,b)=> authorKey(a)<authorKey(b)?-1:authorKey(a)>authorKey(b)?1:0); break;
+      case 'genre':
+        arr.sort((a,b)=> genreKey(a)<genreKey(b)?-1:genreKey(a)>genreKey(b)?1:0); break;
+      case 'series':
+      default: {
+        // Keep existing series-aware sort (series A–Z, then number, then title)
+        const seriesName = (b)=>{
+          if(b.normalizedSeries && !Utils.isEditionSeries(b.normalizedSeries)) return b.normalizedSeries;
+          const fromField = Utils.primarySeries(b.series)||'';
+          const normField = Utils.normalizeSeriesName(fromField);
+          if(normField) return normField;
+          const guessed = Utils.guessSeriesFromTitle(b.title||'');
+          return guessed ? Utils.normalizeSeriesName(guessed) : '';
+        };
+        const tKey = titleKey;
+        arr.sort((a,b)=>{
+          const sa = seriesName(a), sb = seriesName(b);
+          if(sa && sb){
+            if(sa<sb) return -1; if(sa>sb) return 1;
+            const va = (a.volumeNumber!=null)? a.volumeNumber : Utils.extractVolumeNumber(a.title);
+            const vb = (b.volumeNumber!=null)? b.volumeNumber : Utils.extractVolumeNumber(b.title);
+            const aNum = (va!=null && !isNaN(va))? va : Infinity;
+            const bNum = (vb!=null && !isNaN(vb))? vb : Infinity;
+            if(aNum < bNum) return -1; if(aNum > bNum) return 1;
+          } else if(sa || sb){
+            return sa? -1 : 1;
+          }
+          const ta = tKey(a), tb = tKey(b);
+          if(ta<tb) return -1; if(ta>tb) return 1; return 0;
+        });
+      }
+    }
+    return arr;
+  }

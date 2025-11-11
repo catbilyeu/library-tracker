@@ -68,6 +68,17 @@
       } catch(e){ return null; }
     },
 
+    // Cover fallbacks
+    async fetchGoogleCover(isbn13){
+      try{
+        const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn13}`;
+        const res = await fetch(url); if(!res.ok) return null;
+        const data = await res.json(); const item = data.items && data.items[0];
+        const link = item && item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail);
+        if(!link) return null; return link.replace('http://','https://');
+      } catch(e){ return null; }
+    },
+
     async coverErr(img){
       if(img.dataset.fallbackTried==='done') return;
       const step = parseInt(img.dataset.fallbackStep||'0',10);
@@ -82,10 +93,90 @@
       img.dataset.fallbackTried='done';
       img.src = `https://placehold.co/320x480?text=No+Cover`;
     },
-    
-    // Date phrase parsing: returns a timestamp at local midnight for recognizable phrases
-    // Supports:
-    // - Numeric: 11/07, 11/7, 11/07/2025
+
+    // Series helpers
+    normalizeSeriesName(name){
+      if(!name) return '';
+      let s = String(name).toLowerCase();
+      s = s.replace(/\(\s*series\s*\)/g,'');
+      s = s.replace(/^(the|a|an)\s+/,'');
+      s = s.replace(/[#:]|\(|\)|\[|\]|\{|\}|\./g,' ');
+      s = s.replace(/\b(book|bk|vol|volume)\s*\d+[\w\.-]*\b/g,'');
+      s = s.replace(/\s{2,}/g,' ').trim();
+      return s;
+    },
+    isEditionSeries(name){
+      if(!name) return false;
+      const s = String(name).toLowerCase();
+      const keywords = [
+        // Formats / editions
+        'paperback','hardcover','mass market','trade paperback','edition','special edition','collector','collectors',
+        'signed','edges','sprayed edges','painted edges','cover','dust jacket','illustrated','box set','boxed set',
+        'anniversary','limited','exclusive','target exclusive','indigo exclusive','waterstones',
+        // Publisher/collection imprints that are not true series
+        'penguin classics','penguin modern classics','penguin english library','vintage international','bantam classics',
+        "oxford world's classics","oxford worlds classics","everyman's library","everymans library",
+        'modern library','barnes & noble classics','signet classics','folio society','harper perennial','picador',
+        'tor essentials','anchor books','scribner classics'
+      ];
+      return keywords.some(k => s.includes(k));
+    },
+    guessSeriesFromTitle(title){
+      if(!title) return '';
+      const t = String(title);
+      // Look for a parenthetical that also implies numbering, e.g., "(The Empyrean, 1)" or "(Empyrean Book 1)"
+      const m = t.match(/\(([^)]+)\)/);
+      if(m){
+        const inside = m[1].trim();
+        const indicative = /(,\s*\d+\b)|\b(book|bk|vol|volume)\s*\d+\b|#\s*\d+\b/i;
+        if(indicative.test(inside)){
+          const part = inside.split(',')[0].trim();
+          return this.normalizeSeriesName(part);
+        }
+      }
+      return '';
+    },
+    extractSeriesLabelFromTitle(title){
+      if(!title) return '';
+      const t = String(title);
+      const m = t.match(/\(([^)]+)\)/);
+      if(m){
+        const inside = m[1].trim();
+        const indicative = /(,\s*\d+\b)|\b(book|bk|vol|volume)\s*\d+\b|#\s*\d+\b/i;
+        if(indicative.test(inside)){
+          return inside.split(',')[0].trim();
+        }
+      }
+      return '';
+    },
+    primarySeries(list){
+      if(!Array.isArray(list) || !list.length) return '';
+      for(const s of list){ if(s && !this.isEditionSeries(s)) return s; }
+      return list[0] || '';
+    },
+    extractVolumeNumber(title){
+      if(!title) return null;
+      const s = String(title);
+      // (Series, 1) pattern
+      let m = s.match(/\([^\)]*,\s*(\d+(?:[\.-]\d+)?)\)/);
+      if(m) return parseFloat(m[1].replace('-','.'));
+      // Book/Vol numeric patterns
+      m = s.match(/\b(book|bk|vol|volume)\s*(\d+(?:[\.-]\d+)?)\b/i);
+      if(m) return parseFloat(m[2].replace('-','.'));
+      // #1 shorthand (ensure not part of ISBN)
+      m = s.match(/(?:^|\s)#(\d+(?:[\.-]\d+)?)(?:\s|$)/);
+      if(m) return parseFloat(m[1].replace('-','.'));
+      // Roman numerals (e.g., Book IV, Vol II)
+      m = s.match(/\b(book|bk|vol|volume)\s*([ivxlcdm]+)\b/i);
+      if(m){ const roman = m[2].toUpperCase(); const val = (function(r){
+        const map={I:1,V:5,X:10,L:50,C:100,D:500,M:1000}; let total=0, prev=0;
+        for(let i=r.length-1;i>=0;i--){ const cur=map[r[i]]||0; if(cur<prev) total-=cur; else { total+=cur; prev=cur; } }
+        return total||null; })(roman); if(val!=null) return val; }
+      // Word numbers (e.g., Book One, Volume Seven)
+      m = s.match(/\b(book|bk|vol|volume)\s*(one|two|three|four|five|six|seven|eight|nine|ten)\b/i);
+      if(m){ const word=m[2].toLowerCase(); const map={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10}; const val=map[word]; if(val!=null) return val; }
+      return null;
+    },    // - Numeric: 11/07, 11/7, 11/07/2025
     // - Month name: Nov 7, November 7 (optional year)
     // - Keywords: today, yesterday, tomorrow
     // - Relative weekday: last Monday, next Tue(sday), this Friday

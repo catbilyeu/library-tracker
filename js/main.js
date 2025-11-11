@@ -31,6 +31,22 @@
     const voiceBtn = document.getElementById('toggle-voice');
     voiceBtn.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); });
     document.getElementById('btn-settings').addEventListener('click', ()=> { closeMenu(); Settings.open(); });
+    // Sort select
+    const sortSel = document.getElementById('sort-select');
+    if(sortSel){
+      sortSel.addEventListener('change', async ()=>{
+        window.__sortMode = sortSel.value;
+        // New angle: do not reset the current filter when changing sort.
+        // If there is an active search query, re-run it. Otherwise, render all.
+        const q = (document.getElementById('search-input')?.value||'').trim();
+        if(q){
+          publish('search:query', { q });
+        } else {
+          publish('shelves:render', {});
+        }
+      });
+    }
+
   }
 
   async function onBookAdd({ isbn13 }){
@@ -195,6 +211,7 @@
     ImportExport.init({ publish, subscribe });
     HandsFree.init({ publish, subscribe });
     Voice.init({ publish, subscribe });
+    Migrate.init({ publish, subscribe });
     // Load settings and apply preferences without auto-enabling features or changing UI toggle states
     try{
       const s = await Storage.getSettings();

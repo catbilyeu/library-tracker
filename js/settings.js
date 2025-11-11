@@ -71,8 +71,8 @@
               <div class="settings-row">
                 <label for="hf-sens">Sensitivity</label>
                 <div class="range-wrap">
-                  <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.25}" />
-                  <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.25))*100))}%</span>
+                  <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.75}" />
+                  <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.75))*100))}%</span>
                 </div>
               </div>
             </div>

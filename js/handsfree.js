@@ -13,14 +13,18 @@
 
   function mapSensitivity(s){
     s = Math.max(0, Math.min(1, Number(s)||0));
-    const deadzone = Math.round(40 - s*35); // px (40 -> 5)
-    const alpha = 0.12 + s*(0.40-0.12);     // smoothing (0.12 -> 0.40)
-    const debounceMs = Math.round(1200 - s*900); // ms (1200 -> 300)
-    const maxStep = 20 + s*25;              // px/frame cap (20 -> 45)
-    return { s, deadzone, alpha, debounceMs, maxStep };
+    // More stable defaults: larger deadzone, gentler smoothing, smaller max step
+    const deadzone = Math.round(60 - s*52);      // px (60 -> 8)
+    const alpha = 0.08 + s*(0.32);               // smoothing factor (0.08 -> 0.40)
+    const debounceMs = Math.round(1400 - s*900); // ms (1400 -> 500)
+    const maxStep = 14 + s*26;                   // px/frame cap (14 -> 40)
+    // Pinch (grab) tuning scales by sensitivity
+    const pinchThresholdPx = 16 + s*20;          // required pinch tightness (16 -> 36 px)
+    const pinchDwellMs = Math.round(180 - s*120);// hold pinch before click (180 -> 60 ms)
+    return { s, deadzone, alpha, debounceMs, maxStep, pinchThresholdPx, pinchDwellMs };
   }
-  // Default sensitivity set to 25% for steadier cursor
-  let cfg = mapSensitivity(0.25);
+  // Default sensitivity set to 75% for a snappier cursor
+  let cfg = mapSensitivity(0.75);
   // Mirror X by default so cursor follows your hand naturally with a front camera
   let mirrorX = true;
 
@@ -59,6 +63,9 @@
     }catch{}
   }
 
+  // Pinch detection state
+  let pinchDown = false; let pinchStart = 0;
+
   function onResults(results){
     if(!isEnabled) return;
     const now = performance.now(); lastResultsTs = now;
@@ -69,6 +76,7 @@
     const lm = results.multiHandLandmarks[0];
     const tip = lm[8]; // index fingertip
     const mid6 = lm[6]; const mid10 = lm[10]; const tip12 = lm[12];
+    const thumb = lm[4]; // thumb tip
 
     // Flip X to disable the "opposite movement" effect from non-mirrored camera coordinates
     const normX = mirrorX ? (1 - tip.x) : tip.x;
@@ -76,13 +84,30 @@
     const y = Math.max(0, Math.min(window.innerHeight, tip.y * window.innerHeight));
     smoothMove(x,y);
 
-    const open = (tip.y < mid6.y && tip12.y < mid10.y);
-    updateHUD(open? 'Open' : 'Closed');
+    // Click/grab detection using pinch (thumb–index distance + dwell)
+    // Compute pinch distance in screen pixels
+    const tipXpx = x; const tipYpx = y;
+    const thumbXnorm = mirrorX ? (1 - thumb.x) : thumb.x;
+    const thumbXpx = Math.max(0, Math.min(window.innerWidth, thumbXnorm * window.innerWidth));
+    const thumbYpx = Math.max(0, Math.min(window.innerHeight, thumb.y * window.innerHeight));
+    const pinchDist = Math.hypot(tipXpx - thumbXpx, tipYpx - thumbYpx);
 
-    if(!open && (now - lastClick) > cfg.debounceMs){
-      lastClick = now;
-      publish('handsfree:click', { x: prevX||x, y: prevY||y });
+    // Open-hand heuristic (for HUD only)
+    const open = (tip.y < mid6.y && tip12.y < mid10.y);
+
+    const isPinched = pinchDist <= cfg.pinchThresholdPx;
+    if(isPinched){
+      if(!pinchDown){ pinchDown = true; pinchStart = now; }
+      // If sustained beyond dwell and not within debounce, fire once
+      if(pinchDown && (now - pinchStart) >= cfg.pinchDwellMs && (now - lastClick) > cfg.debounceMs){
+        lastClick = now; pinchDown = false; // consume pinch
+        publish('handsfree:click', { x: prevX||x, y: prevY||y });
+      }
+    } else {
+      pinchDown = false;
     }
+
+    updateHUD(isPinched ? 'Pinch' : (open ? 'Open' : 'Closed'));
   }
 
   function smoothMove(x,y){

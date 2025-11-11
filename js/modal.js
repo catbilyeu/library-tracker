@@ -21,7 +21,9 @@
   function headerArea(b, id){
     const title=(b&&b.title)||'(Untitled)';
     const authors=Array.isArray(b&&b.authors)? b.authors.join(', ') : '';
-    return '<div class="header"><div class="title-wrap"><h2 id="'+id+'" class="title">'+title+'</h2><div class="subtitle">'+authors+'</div></div><button class="close" type="button" aria-label="Close">×</button></div>';
+    const seriesLabel = Utils.extractSeriesLabelFromTitle(b.title) || Utils.primarySeries(b.series);
+    const series = seriesLabel ? '<div class="subtitle">'+seriesLabel+' <button id="btn-edit-series" class="mini" type="button" aria-label="Edit series">Edit</button></div>' : '<div class="subtitle"><button id="btn-edit-series" class="mini" type="button" aria-label="Set series">Set series</button></div>';
+    return '<div class="header"><div class="title-wrap"><h2 id="'+id+'" class="title">'+title+'</h2>'+series+'<div class="subtitle">'+authors+'</div></div><button class="close" type="button" aria-label="Close">×</button></div>';
   }
 
   function bodyArea(b){
@@ -41,7 +43,14 @@
              '<button type="button" class="mini edit" aria-label="Edit entry">Edit</button>'+
              '<button type="button" class="mini danger remove" aria-label="Remove entry">Remove</button></span></li>';
     }).join('')||'<li>None</li>';
-    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" onerror="Utils.coverErr(this)" alt="Cover" /><div><div class="actions">'+(!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+Utils.titleCaseName(last.borrower)+')' : '')+'</button>')+'<button id="btn-remove" class="danger">Remove</button></div><div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
+    const actionsHtml = `
+      <div class="actions">
+        <button id="btn-reenrich">Re-enrich metadata</button>
+        <button id="btn-edit-series-2">Edit series</button>
+        ${!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+Utils.titleCaseName(last.borrower)+')' : '')+'</button>'}
+        <button id="btn-remove" class="danger">Remove</button>
+      </div>`;
+    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" onerror="Utils.coverErr(this)" alt="Cover" /><div>'+actionsHtml+'<div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
   }
 
   function getFocusable(container){
@@ -76,9 +85,85 @@
     const lendBtn = r.querySelector('#btn-lend');
     const returnBtn = r.querySelector('#btn-return');
     const removeBtn = r.querySelector('#btn-remove');
+    const reBtn = r.querySelector('#btn-reenrich');
 
-    const initial = lendBtn||returnBtn||removeBtn||r.querySelector('.close')||panel;
+    // Wire series edit buttons
+    const seriesBtnHdr = r.querySelector('#btn-edit-series');
+    const seriesBtnBody = r.querySelector('#btn-edit-series-2');
+    const openSeriesEditor = ()=>{
+      const overlay=document.createElement('div'); overlay.className='inline-overlay'; overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true');
+      const dialog=document.createElement('div'); dialog.className='dialog';
+      const h3=document.createElement('h3'); h3.textContent='Edit series';
+      const row1=document.createElement('div'); row1.className='row'; const l1=document.createElement('label'); l1.className='muted'; l1.htmlFor='series-name'; l1.textContent='Series name'; row1.appendChild(l1);
+      const i1=document.createElement('input'); i1.id='series-name'; i1.placeholder='The Empyrean'; i1.value = Utils.primarySeries(current.series) || '';
+      const row2=document.createElement('div'); row2.className='row'; const l2=document.createElement('label'); l2.className='muted'; l2.htmlFor='series-number'; l2.textContent='Book number (optional)'; row2.appendChild(l2);
+      const i2=document.createElement('input'); i2.id='series-number'; i2.type='number'; i2.step='0.1'; i2.min='0'; i2.placeholder='1';
+      try{ const parsed = Utils.extractVolumeNumber(current.title); if(parsed!=null) i2.value = String(parsed); else if(current.volumeNumber!=null) i2.value = String(current.volumeNumber); }catch{}
+      const actions=document.createElement('div'); actions.className='actions';
+      const cancel=document.createElement('button'); cancel.type='button'; cancel.textContent='Cancel';
+      const save=document.createElement('button'); save.type='button'; save.className='accent'; save.textContent='Save';
+      actions.appendChild(cancel); actions.appendChild(save);
+      dialog.appendChild(h3); dialog.appendChild(row1); dialog.appendChild(i1); dialog.appendChild(row2); dialog.appendChild(i2); dialog.appendChild(actions);
+      overlay.appendChild(dialog); r.appendChild(overlay); i1.focus();
+      const doSave=async()=>{
+        const name=(i1.value||'').trim(); const numRaw=(i2.value||'').trim();
+        const vol = numRaw? parseFloat(numRaw) : null;
+        // Update series array: put edited name first, remove edition/format labels and duplicates
+        const rest = Array.isArray(current.series)? current.series.filter(s=> s && !Utils.isEditionSeries(s) && s.trim().toLowerCase()!==name.toLowerCase()) : [];
+        current.series = name? [name, ...rest] : rest;
+        current.volumeNumber = (vol!=null && !isNaN(vol))? vol : null;
+        // Update normalizedSeries for sorting/grouping
+        current.normalizedSeries = name? Utils.normalizeSeriesName(name) : (Utils.guessSeriesFromTitle(current.title||'') || '');
+        await window.Storage.putBook(current);
+        overlay.remove(); open({ isbn13: current.isbn13 });
+        // Re-render shelves to re-group and re-sort
+        publish('book:updated', { book: current });
+      };
+      cancel.onclick=()=> overlay.remove();
+      save.onclick=doSave;
+      overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); overlay.remove(); }});
+    };
+    if(seriesBtnHdr){ seriesBtnHdr.addEventListener('click', openSeriesEditor); }
+    if(seriesBtnBody){ seriesBtnBody.addEventListener('click', openSeriesEditor); }
+
+    const initial = lendBtn||returnBtn||removeBtn||reBtn||seriesBtnHdr||seriesBtnBody||r.querySelector('.close')||panel;
     if(initial&&initial.focus) initial.focus();
+
+    if(reBtn){
+      reBtn.addEventListener('click', async ()=>{
+        try{
+          const q = current.title ? `intitle:"${current.title}"` : `isbn:${current.isbn13}`;
+          const results = await Metadata.searchGoogleBooks(q);
+          if(!results || results.length===0){ Utils.toast('No candidates found', { type:'info' }); return; }
+          // Simple chooser overlay
+          const overlay=document.createElement('div'); overlay.className='inline-overlay'; overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true');
+          const dialog=document.createElement('div'); dialog.className='dialog';
+          const h3=document.createElement('h3'); h3.textContent='Select metadata'; dialog.appendChild(h3);
+          const list=document.createElement('div'); list.style.display='grid'; list.style.gridTemplateColumns='1fr'; list.style.gap='8px';
+          results.slice(0,6).forEach((it,idx)=>{
+            const row=document.createElement('button'); row.type='button'; row.style.display='grid'; row.style.gridTemplateColumns='48px 1fr'; row.style.alignItems='center'; row.style.gap='8px'; row.style.textAlign='left';
+            const img=document.createElement('img'); img.src=it.image||''; img.alt=''; img.width=48; img.height=64; img.style.objectFit='cover'; img.style.background='#0a121f';
+            const meta=document.createElement('div'); meta.innerHTML = `<div style="font-weight:600">${it.title||''}</div><div class="muted" style="font-size:12px">${(it.authors||[]).join(', ')}</div>`;
+            row.appendChild(img); row.appendChild(meta);
+            row.addEventListener('click', async ()=>{
+              try{
+                current.authors = Array.isArray(it.authors)? it.authors : [];
+                if(it.image){ current.coverUrl = it.image; }
+                const g = it.seriesGuess; if(g){ current.series = [g]; current.normalizedSeries = Utils.normalizeSeriesName(g); }
+                await window.Storage.putBook(current);
+                overlay.remove();
+                open({ isbn13: current.isbn13 });
+              }catch(e){ console.error('Re-enrich apply failed', e); Utils.toast('Failed to apply metadata', { type:'error' }); }
+            });
+            list.appendChild(row);
+          });
+          const actions=document.createElement('div'); actions.className='actions';
+          const cancel=document.createElement('button'); cancel.type='button'; cancel.textContent='Cancel'; cancel.addEventListener('click', ()=> overlay.remove());
+          dialog.appendChild(list); dialog.appendChild(actions); actions.appendChild(cancel);
+          overlay.appendChild(dialog); r.appendChild(overlay);
+        }catch(e){ console.error('Re-enrich failed', e); Utils.toast('Re-enrich failed', { type:'error' }); }
+      });
+    }
 
     // Wire edit/remove per-history actions
     const historyList = r.querySelector('.history ul');

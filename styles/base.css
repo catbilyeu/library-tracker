@@ -51,7 +51,7 @@ button.icon.close:hover{background:rgba(255,255,255,.12);color:var(--fg)}
 /* Pager styles */
 .pager{ position: fixed; right: 16px; bottom: 16px; display:flex; gap:16px; z-index:2200; pointer-events:none; }
 .pager .pager-btn{ width:96px; height:96px; min-width:96px; min-height:96px; border-radius:20px; font-size:42px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,.45); opacity:.35; transition: opacity .15s ease, transform .1s ease; pointer-events:auto; }
-.pager .pager-btn:hover{ opacity:.85; transform: translateY(-1px); }
+.pager .pager-btn:hover, .pager .pager-btn:not(:disabled).hf-hover{ opacity:1; transform: translateY(-1px); }
 .pager .pager-btn:disabled{ opacity:.18; cursor:not-allowed; }
 @media (max-width: 680px){ .pager .pager-btn{ width:84px; height:84px; min-width:84px; min-height:84px; font-size:36px; } }
 
@@ -64,4 +64,7 @@ main{ height: calc(100vh - 64px); overflow: hidden; display:block; }
   .app-header{ min-height:64px; }
 
 /* Raise z-index on hover/focus to ensure pager sits above grid for motion cursor */
-.pager .pager-btn:hover, .pager .pager-btn:focus{ z-index: 2300; }
+.pager .pager-btn:hover, .pager .pager-btn:focus, .pager .pager-btn:not(:disabled).hf-hover{ z-index: 2300; }
+/* Sort dropdown */
+#sort-select{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:#0e141f; color:var(--fg); }
+#sort-select:focus{ outline:2px solid var(--accent); outline-offset:2px; }

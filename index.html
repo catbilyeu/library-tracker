@@ -16,6 +16,12 @@
     <h1>Library Tracker</h1>
     <div class="controls">
       <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
+      <select id="sort-select" aria-label="Sort books" title="Sort">
+        <option value="series" selected>Series (A–Z)</option>
+        <option value="title">Title (A–Z)</option>
+        <option value="author">Author (A–Z)</option>
+        <option value="genre">Genre (A–Z)</option>
+      </select>
       <div class="isbn-inline" style="display:flex;gap:6px;align-items:center">
         <input id="isbn-input" inputmode="numeric" pattern="[-0-9Xx ]+" placeholder="Enter ISBN…" aria-label="Enter ISBN" style="width:180px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#0e141f;color:var(--fg)" />
         <button id="btn-add" aria-label="Add ISBN">Add</button>
@@ -52,7 +58,6 @@
 
   <!-- External libraries -->
   <!-- idb loaded via dynamic import in db.js to avoid MIME/CORS issues -->
-  <script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
@@ -69,6 +74,7 @@
   <script src="js/handsfree.js"></script>
   <script src="js/voice.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/migrate.js"></script>
   <script src="js/main.js"></script>
   <!-- Pager controls -->
   <div id="pager" class="pager" aria-label="Pagination controls" hidden>
