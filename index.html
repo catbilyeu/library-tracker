@@ -15,7 +15,11 @@
   <header class="app-header">
     <h1>Library Tracker</h1>
     <div class="controls">
-      <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
+      <div class="search-wrap">
+        <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
+        <button id="btn-clear-search" class="icon small" aria-label="Clear search" title="Clear search" hidden>✕</button>
+        <span id="results-count" class="results-count" aria-live="polite"></span>
+      </div>
       <select id="sort-select" aria-label="Sort books" title="Sort">
         <option value="series" selected>Series (A–Z)</option>
         <option value="title">Title (A–Z)</option>

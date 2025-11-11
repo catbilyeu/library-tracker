@@ -39,7 +39,7 @@
       await tx.done; publish('shelves:render', {}); publish('import:done', { addedCount: books.length, skippedCount: 0 }); },
     async exportAll(){ const books = await this.getAllBooks(); const map={}; for(const b of books){ map[b.isbn13]=b; }
       return { version:1, exportedAt: Date.now(), books: map }; },
-    async getSettings(){ const db = await getDB(); return (await db.get('settings','settings')) || { handsFreeEnabled:false, voiceEnabled:false, handsFreeSensitivity:0.25, handsFreeMirrorX:true, voiceAnnouncements:true } },
+    async getSettings(){ const db = await getDB(); return (await db.get('settings','settings')) || { handsFreeEnabled:false, voiceEnabled:false, handsFreeSensitivity:0.25, handsFreeMirrorX:true, voiceAnnouncements:true, sortMode:'series' } },
     async setSettings(partial){ const db = await getDB(); const cur = (await this.getSettings()) || {}; const next = { ...cur, ...partial }; await db.put('settings', next, 'settings'); return next; }
   };
 

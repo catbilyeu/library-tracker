@@ -40,13 +40,13 @@
           if(Array.isArray(wd.series)) book.series = wd.series.map(s=> typeof s==='string'? s : (s && s.name)||'').filter(Boolean);
           // Try extracting series from work title parentheses if OL doesn’t provide series
           if((!book.series || book.series.length===0) && wd.title){
-            const g = Utils.guessSeriesFromTitle(wd.title); if(g) book.series = [g];
+            const g = Utils.guessSeriesFromTitle(wd.title); if(g) book.series = [Utils.titleCaseName(g)];
           }
         } }catch{}
       }
       // Also try to derive series from edition title if present
       if((!book.series || book.series.length===0) && book.title){
-        const g = Utils.guessSeriesFromTitle(book.title); if(g) book.series = [g];
+        const g = Utils.guessSeriesFromTitle(book.title); if(g) book.series = [Utils.titleCaseName(g)];
       }
     } catch(e){
       // fallback API
@@ -60,7 +60,7 @@
           if(Array.isArray(bd.authors)) book.authors = bd.authors.map(a=>a.name).filter(Boolean);
           if(Array.isArray(bd.subjects)) book.subjects = bd.subjects.map(s=>s.name).filter(Boolean);
           if(Array.isArray(bd.series)) book.series = bd.series.map(s=> s.name || s).filter(Boolean);
-          if((!book.series || book.series.length===0) && bd.title){ const g = Utils.guessSeriesFromTitle(bd.title); if(g) book.series=[g]; }
+          if((!book.series || book.series.length===0) && bd.title){ const g = Utils.guessSeriesFromTitle(bd.title); if(g) book.series=[Utils.titleCaseName(g)]; }
         }
       } catch{}
     }

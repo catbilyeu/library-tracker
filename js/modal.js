@@ -108,12 +108,13 @@
       const doSave=async()=>{
         const name=(i1.value||'').trim(); const numRaw=(i2.value||'').trim();
         const vol = numRaw? parseFloat(numRaw) : null;
-        // Update series array: put edited name first, remove edition/format labels and duplicates
-        const rest = Array.isArray(current.series)? current.series.filter(s=> s && !Utils.isEditionSeries(s) && s.trim().toLowerCase()!==name.toLowerCase()) : [];
-        current.series = name? [name, ...rest] : rest;
+        const displayName = name ? Utils.titleCaseName(name) : '';
+        // Update series array: put edited name first, remove edition/format labels and duplicates (case-insensitive)
+        const rest = Array.isArray(current.series)? current.series.filter(s=> s && !Utils.isEditionSeries(s) && s.trim().toLowerCase()!==displayName.toLowerCase()) : [];
+        current.series = displayName? [displayName, ...rest] : rest;
         current.volumeNumber = (vol!=null && !isNaN(vol))? vol : null;
         // Update normalizedSeries for sorting/grouping
-        current.normalizedSeries = name? Utils.normalizeSeriesName(name) : (Utils.guessSeriesFromTitle(current.title||'') || '');
+        current.normalizedSeries = displayName? Utils.normalizeSeriesName(displayName) : (Utils.guessSeriesFromTitle(current.title||'') || '');
         await window.Storage.putBook(current);
         overlay.remove(); open({ isbn13: current.isbn13 });
         // Re-render shelves to re-group and re-sort

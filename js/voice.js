@@ -12,7 +12,7 @@
   let startedByPTT=false; // last start source
   let restartOnEnd=false; // internal restart guard
   let announcements=true; // speech confirmations
-  let processDelayMs=350; // buffer time before processing final text (to allow users to finish)
+  let processDelayMs=700; // buffer time before processing final text (to allow users to finish)
   let pttOnly=false; // push-to-talk mode (Spacebar)
 
   // Mic selection (best-effort: Web Speech API doesn't expose device routing)
@@ -91,13 +91,50 @@
     let m = s.match(/^(search|find|look\s*up|lookup)\s+(.+)/i);
     if(m) return { type:'search', payload:{ q: m[2] } };
 
+    // clear search
+    if(/^(clear|clear\s+search)$/i.test(s)) return { type:'search:clear', payload:{} };
+
     // "do i have ..." check
     m = s.match(/^do\s+i\s+have\s+(.+)/i);
     if(m) return { type:'book:check_have', payload:{ target: m[1] } };
 
+    // "who's borrowing ..." or "who is borrowing ..." -> open modal to show details
+    m = s.match(/^who('?s|\s+is)\s+borrow(ing)?\s+(.+)/i);
+    if(m) return { type:'book:is_borrowed', payload:{ target: m[3] } };
+
+    // "[name] started borrowing [book] (on|for|last|next|this) <datePhrase>" => lend intent with date
+    m = s.match(/^(.+?)\s+started\s+borrow(ing)?\s+(.+?)(?:\s+(?:on|for|last|next|this)\s+(.+))?$/i);
+    if(m){
+      const borrower=(m[1]||'').trim(); const target=(m[3]||'').trim();
+      const datePhrase=(m[4]||'').trim();
+      let borrowedAt = null; if(datePhrase){ borrowedAt = Utils.parseDatePhrase(datePhrase); }
+      return { type:'lend', payload:{ target, borrower, borrowedAt } };
+    }
+
     // "is anyone borrowing ..." -> open modal and speak status
     m = s.match(/^is\s+any(one|body)\s+borrow(ing)?\s+(.+)/i);
     if(m) return { type:'book:is_borrowed', payload:{ target: m[3] } };
+
+    // "which books are [name] borrowing" -> filter shelves to show active loans for name
+    m = s.match(/^which\s+books\s+are\s+(.+?)\s+borrow(ing)?\??$/i);
+    if(m){
+      const borrower=(m[1]||'').trim();
+      return { type:'borrower:list', payload:{ borrower } };
+    }
+
+    // "which books is [name] borrowing" -> filter shelves to show active loans for name
+    m = s.match(/^which\s+books\s+is\s+(.+?)\s+borrow(ing)?\??$/i);
+    if(m){
+      const borrower=(m[1]||'').trim();
+      return { type:'borrower:list', payload:{ borrower } };
+    }
+
+    // "[name] is borrowing [book]" => lend intent
+    m = s.match(/^(.+?)\s+is\s+borrow(ing)?\s+(.+)/i);
+    if(m){
+      const borrower=(m[1]||'').trim(); const target=(m[3]||'').trim();
+      return { type:'lend', payload:{ target, borrower, borrowedAt: null } };
+    }
 
     // name borrowed book => lend intent
     m = s.match(/^([^\d]+?)\s+borrowed\s+(.+)/i);

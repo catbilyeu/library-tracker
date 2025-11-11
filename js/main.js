@@ -34,16 +34,21 @@
     // Sort select
     const sortSel = document.getElementById('sort-select');
     if(sortSel){
+      // Initialize from settings
+      try{
+        Storage.getSettings().then(s=>{
+          const saved = s.sortMode || 'series';
+          sortSel.value = saved;
+          window.__sortMode = saved;
+        }).catch(()=>{});
+      }catch{}
       sortSel.addEventListener('change', async ()=>{
         window.__sortMode = sortSel.value;
-        // New angle: do not reset the current filter when changing sort.
+        try{ await Storage.setSettings({ sortMode: window.__sortMode }); }catch{}
         // If there is an active search query, re-run it. Otherwise, render all.
         const q = (document.getElementById('search-input')?.value||'').trim();
-        if(q){
-          publish('search:query', { q });
-        } else {
-          publish('shelves:render', {});
-        }
+        if(q){ publish('search:query', { q }); }
+        else { publish('shelves:render', {}); }
       });
     }
 
@@ -96,6 +101,9 @@
       case 'search': {
         publish('search:query', { q: payload.q });
         break; }
+      case 'search:clear': {
+        publish('search:query', { q: '' });
+        break; }
       case 'scanner:open':
         publish('scanner:open', {}); break;
       case 'book:add':
@@ -106,12 +114,15 @@
         if(results.length===0){ Utils.toast('No matching book found', { type:'warn' }); return; }
         if(results.length>1){ publish('shelves:render', { books: results }); Utils.toast(`${results.length} matches — refine your request`, { type:'info' }); return; }
         const book = results[0];
-        const borrower = payload.borrower;
+        const borrowerRaw = (payload.borrower||'').trim();
+        const borrower = Utils.titleCaseName ? Utils.titleCaseName(borrowerRaw) : borrowerRaw;
         if(!borrower){ Utils.toast('Missing borrower name', { type:'warn' }); return; }
         let borrowedAt = payload.borrowedAt;
         if(typeof borrowedAt !== 'number' || isNaN(borrowedAt)) borrowedAt = Date.now();
         book.borrowHistory = book.borrowHistory||[]; book.borrowHistory.push({ borrower, borrowedAt });
         await Storage.putBook(book);
+        // Emit a borrow:lent event for consistency with modal flow
+        try{ publish('borrow:lent', { isbn13: book.isbn13, borrower, borrowedAt }); }catch{}
         // If announcements are off, open the book modal so the user gets visual confirmation
         try{
           const settings = await Storage.getSettings();
@@ -153,6 +164,25 @@
         if(results.length>1){ publish('shelves:render', { books: results }); return; }
         const book = results[0];
         publish('modal:open', { isbn13: book.isbn13 });
+        break; }
+      case 'borrower:list': {
+        const borrowerRaw = (payload.borrower||'').trim(); if(!borrowerRaw) return;
+        const borrower = Utils.titleCaseName ? Utils.titleCaseName(borrowerRaw) : borrowerRaw;
+        const all = await Storage.getAllBooks();
+        const filtered = all.filter(b=> (b.borrowHistory||[]).some(h=> !h.returnedAt && h.borrower && h.borrower.toLowerCase().trim()===borrower.toLowerCase().trim()));
+        if(filtered.length===0){ Utils.toast(`${borrower} is not borrowing any books`, { type:'info' }); }
+        publish('shelves:render', { books: filtered });
+        // Speak confirmation with count if voice announcements are on
+        try{
+          const settings = await Storage.getSettings();
+          if(settings.voiceAnnouncements!==false){
+            const count = filtered.length;
+            const msg = count===0 ? `${borrower} is not borrowing any books` : `${borrower} is borrowing ${count} book${count===1?'':'s'}`;
+            const utter = new SpeechSynthesisUtterance(msg);
+            utter.lang = navigator.language || 'en-US';
+            window.speechSynthesis?.speak(utter);
+          }
+        }catch{}
         break; }
       case 'remove': {
         const results = await resolveBooks(payload.target);
@@ -267,4 +297,29 @@
 
   window.App = { init, publish, subscribe };
   window.addEventListener('DOMContentLoaded', init);
+})();
+/* Announce page changes for a11y */
+(function(){
+  const origRender = window.Shelves?.render;
+  if(!origRender) return;
+  window.Shelves.render = function(list){
+    const before = (window.__pagerInfo||{});
+    const prevPages = before.pages||0; const prevIndex = before.pageIndex||0;
+    const res = origRender.apply(this, arguments);
+    // After render, try to infer new paging from DOM if exposed via attributes later
+    try{
+      // We don’t have direct access to pages in this scope; keep simple: announce page when Next/Prev clicked
+      const pager = document.getElementById('pager');
+      if(pager && !pager.dataset.a11yWired){
+        const prev = document.getElementById('btn-prev-page');
+        const next = document.getElementById('btn-next-page');
+        const live = document.getElementById('results-count');
+        const announce = (text)=>{ if(live) live.textContent = text; };
+        if(prev){ prev.addEventListener('click', ()=> announce('Changed page')); }
+        if(next){ next.addEventListener('click', ()=> announce('Changed page')); }
+        pager.dataset.a11yWired='1';
+      }
+    }catch{}
+    return res;
+  };
 })();
