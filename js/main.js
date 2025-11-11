@@ -200,11 +200,6 @@
           }
         }catch{}
         break; }
-
-          if(changed){ await Storage.putBook(b); }
-        }
-        if(count===0){ Utils.toast(`${borrower} has no outstanding books`, { type:'info' }); }
-        break; }
       case 'book:check_have': {
         const results = await resolveBooks(payload.target);
         // If exactly one, open modal for quick glance
