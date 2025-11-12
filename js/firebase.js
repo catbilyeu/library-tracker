@@ -12,6 +12,9 @@
       app = firebase.initializeApp(window.firebaseConfig);
       auth = firebase.auth();
       db = firebase.firestore();
+      // Prefer SESSION persistence for Incognito/3rd-party-restricted contexts
+      try{ await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION); }
+      catch(e){ console.info('[Auth] setPersistence SESSION failed, using default', e?.code||e?.message||e); }
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); }
       catch(e){ console.info('[Firestore] Persistence not available or already enabled', e?.code||e?.message||e); }
