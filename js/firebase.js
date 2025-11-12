@@ -55,8 +55,21 @@
     if(!configured) return;
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    dbg('[auth] signInWithRedirect start');
-    await auth.signInWithRedirect(provider);
+    try{
+      dbg('[auth] signInWithPopup start');
+      await auth.signInWithPopup(provider);
+      dbg('[auth] signInWithPopup success');
+    }catch(e){
+      const code = e?.code || '';
+      const msg = e?.message || '';
+      dbg('[auth] popup failed -> redirect fallback', code, msg);
+      if(/popup/i.test(code) || /popup/i.test(msg) || /closed/i.test(msg) || /blocked/i.test(msg)){
+        await auth.signInWithRedirect(provider);
+      } else {
+        // Unknown error: still try redirect as a fallback
+        await auth.signInWithRedirect(provider);
+      }
+    }
   }
   async function signOut(){ if(!configured) return; dbg('[auth] signOut'); await auth.signOut(); }
 
