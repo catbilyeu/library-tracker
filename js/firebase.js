@@ -15,6 +15,17 @@
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); }
       catch(e){ console.info('[Firestore] Persistence not available or already enabled', e?.code||e?.message||e); }
+      // Process redirect result early to surface errors
+      try {
+        const res = await auth.getRedirectResult();
+        if(res && res.user){ /* signed in via redirect */ }
+      } catch(e) {
+        const code = e?.code || 'auth/unknown';
+        const msg = e?.message || 'Sign-in failed';
+        console.warn('[Auth] getRedirectResult error', code, msg);
+        try { Utils.toast(`Sign-in failed (${code.replace('auth/','')}): ${msg}`, { type:'error', duration:6000 }); } catch{}
+        // Common fix: add your GitHub Pages domain to Firebase Auth → Authorized domains
+      }
       auth.onAuthStateChanged(async (u)=>{
         user = u || null;
         publish('auth:state', { user });
