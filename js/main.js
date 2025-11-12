@@ -36,7 +36,12 @@
     if(loginBtn){ loginBtn.addEventListener('click', async ()=>{
       try{
         if(Firebase?.getUser?.()){ await Firebase.signOut(); }
-        else { await Firebase.signIn(); }
+        else {
+          // Show overlay to make it clear a redirect will happen
+          try{ const o=document.getElementById('auth-overlay'); if(o) o.hidden=false; }catch{}
+          // Start redirect sign-in
+          await Firebase.signIn();
+        }
       }catch(e){ Utils.toast('Auth error', { type:'error' }); }
     }); }
     // Sort select
