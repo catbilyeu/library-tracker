@@ -383,19 +383,15 @@
     }
   }
 
-  // Register Service Worker only on HTTPS and non-localhost (avoid cache headaches in dev)
+  // In dev or on GitHub Pages, always register SW to ensure cache busting takes effect
   if ('serviceWorker' in navigator) {
-    const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
-    const isHttps = location.protocol === 'https:';
-    if (isHttps && !isLocalhost) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch((err) => {
-          console.warn('SW registration failed', err);
-        });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(()=>{
+        try{ navigator.serviceWorker.getRegistrations().then(rs=> rs.forEach(r=> r.update())); }catch{}
+      }).catch((err) => {
+        console.warn('SW registration failed', err);
       });
-    } else {
-      console.info('[Library Tracker] Skipping Service Worker registration in dev (non-HTTPS or localhost).');
-    }
+    });
   }
 
   window.App = { init, publish, subscribe };
