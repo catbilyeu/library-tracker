@@ -15,11 +15,16 @@
 
   function card(b){
     const img = b.coverUrl || `https://covers.openlibrary.org/b/isbn/${b.isbn13}-M.jpg`;
-    const seriesLabel = Utils.extractSeriesLabelFromTitle(b.title) || getPrimarySeries(b);
-    const series = seriesLabel ? `<div class=\"series\">${seriesLabel}</div>` : '';
+    const esc = Utils.escapeHTML;
+    const titleSafe = esc(b.title || '(Untitled)');
+    const authorsSafe = esc((b.authors||[]).join(', '));
+    const seriesLabelRaw = Utils.extractSeriesLabelFromTitle(b.title) || getPrimarySeries(b);
+    const seriesLabelSafe = seriesLabelRaw ? esc(seriesLabelRaw) : '';
+    const series = seriesLabelSafe ? `<div class="series">${seriesLabelSafe}</div>` : '';
     const volMatch = (b.title||'').match(/\b(book|bk|vol|volume)\s*(\d+([\.-]\d+)?)\b/i);
-    const volume = volMatch ? `<div class=\"series\">Vol ${volMatch[2]}</div>` : '';
-    return `<article class=\"book-card\" data-isbn=\"${b.isbn13}\" tabindex=\"0\" aria-label=\"${b.title}\">\n      <img loading=\"lazy\" src=\"${img}\" data-isbn=\"${b.isbn13}\" onerror=\"Utils.coverErr(this)\" alt=\"Cover of ${b.title||'Unknown'}\" />\n      <div class=\"meta\">\n        <h3 class=\"title\">${b.title||'(Untitled)'}<\/h3>\n        ${series || volume}\n        <p class=\"authors\">${(b.authors||[]).join(', ')}<\/p>\n      <\/div>\n    <\/article>`;
+    const volume = volMatch ? `<div class="series">Vol ${esc(volMatch[2])}</div>` : '';
+    const imgUrl = Utils.sanitizeURL(img);
+    return `<article class="book-card" data-isbn="${b.isbn13}" tabindex="0" aria-label="${titleSafe}">\n      <img loading="lazy" src="${imgUrl}" data-isbn="${b.isbn13}" alt="Cover of ${titleSafe}" />\n      <div class="meta">\n        <h3 class="title">${titleSafe}<\/h3>\n        ${series || volume}\n        <p class="authors">${authorsSafe}<\/p>\n      <\/div>\n    <\/article>`;
   }
 
   function seriesKey(b){
@@ -128,6 +133,10 @@
     const out = pageItems.map(b=> card(b)).join('');
 
     root.innerHTML = out || `<div class="empty-state">No books yet. Add with Scan or Add ISBN.</div>`;
+    // Replace inline onerror handlers with programmatic error fallback
+    root.querySelectorAll('img[data-isbn]').forEach(img=>{
+      img.addEventListener('error', ()=> Utils.coverErr(img));
+    });
     attachDelegatedHandlers(root);
     updatePager();
     return;

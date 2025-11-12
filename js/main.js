@@ -31,16 +31,23 @@
     const voiceBtn = document.getElementById('toggle-voice');
     voiceBtn.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); });
     document.getElementById('btn-settings').addEventListener('click', ()=> { closeMenu(); Settings.open(); });
+    // Ensure login button sits between mic and hamburger at runtime (defensive against cached HTML)
+    try{
+      const controls = document.querySelector('.app-header .controls');
+      const loginBtn = document.getElementById('btn-login');
+      const hamburger = document.getElementById('hamburger');
+      if(controls && loginBtn && hamburger){ controls.insertBefore(loginBtn, hamburger); }
+    }catch{}
     // Auth button
     const loginBtn = document.getElementById('btn-login');
     if(loginBtn){ loginBtn.addEventListener('click', async ()=>{
       try{
-        if(Firebase?.getUser?.()){ await Firebase.signOut(); }
-        else {
-          // Show overlay to make it clear a redirect will happen
-          try{ const o=document.getElementById('auth-overlay'); if(o) o.hidden=false; }catch{}
-          // Start redirect sign-in
-          await Firebase.signIn();
+        if(Firebase?.getUser?.()){
+          // Force redirect to Google login immediately after sign out
+          await Firebase.signOut();
+          await Firebase.signIn(); // redirect flow
+        } else {
+          await Firebase.signIn(); // redirect or popup
         }
       }catch(e){ Utils.toast('Auth error', { type:'error' }); }
     }); }
@@ -313,9 +320,19 @@
       const loginBtn = document.getElementById('btn-login');
       const overlay = document.getElementById('auth-overlay');
       const hideAuthOverlay = ()=>{
-        if(overlay){ overlay.hidden = true; try{ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); overlay.classList.add('gone'); }catch{} }
+        if(overlay){
+          // Use the hidden attribute as the single source of truth for visibility
+          overlay.hidden = true;
+          try{
+            // Remove any inline styles/classes from previous sessions so future show() works
+            overlay.style.removeProperty('display');
+            overlay.removeAttribute('aria-hidden');
+            overlay.classList.remove('gone');
+          }catch{}
+        }
       };
       if(user){
+        document.body.classList.remove('signed-out');
         Storage.setBackend(Firebase.CloudStorage);
         // First-time sign-in: offer to import local books to cloud if cloud is empty
         try{
@@ -354,8 +371,11 @@
         Utils.toast(`Signed in as ${user.displayName||user.email}`, { type:'ok' });
         const all = await Storage.getAllBooks(); Search.setIndex(all); Shelves.render(all);
       } else {
+        document.body.classList.add('signed-out');
         Storage.setBackend(window.StorageLocal);
         if(loginBtn){ loginBtn.textContent = 'Sign in'; loginBtn.title = 'Sign in with Google'; }
+        // After sign out, show the login overlay so user can sign back in
+        try{ if(overlay){ overlay.hidden = false; overlay.focus?.(); } }catch{}
       }
     });
 
@@ -387,9 +407,7 @@
     wireHeader();
     // Auth overlay buttons
     const authOverlay = document.getElementById('auth-overlay');
-    const authCancel = document.getElementById('btn-auth-cancel');
     const authGoogle = document.getElementById('btn-auth-google');
-    if(authCancel){ authCancel.addEventListener('click', ()=> { authOverlay.hidden = true; }); }
     if(authGoogle){ authGoogle.addEventListener('click', async ()=>{
       try{ await Firebase.signIn(); authOverlay.hidden = true; } catch(e){ Utils.toast('Sign-in failed', { type:'error' }); }
     }); }

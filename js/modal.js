@@ -19,27 +19,31 @@
   }
 
   function headerArea(b, id){
-    const title=(b&&b.title)||'(Untitled)';
-    const authors=Array.isArray(b&&b.authors)? b.authors.join(', ') : '';
-    const seriesLabel = Utils.extractSeriesLabelFromTitle(b.title) || Utils.primarySeries(b.series);
+    const esc = Utils.escapeHTML;
+    const title=esc((b&&b.title)||'(Untitled)');
+    const authors=esc(Array.isArray(b&&b.authors)? b.authors.join(', ') : '');
+    const sl = Utils.extractSeriesLabelFromTitle(b.title) || Utils.primarySeries(b.series);
+    const seriesLabel = sl ? esc(sl) : '';
     const series = seriesLabel ? '<div class="subtitle">'+seriesLabel+' <button id="btn-edit-series" class="mini" type="button" aria-label="Edit series">Edit</button></div>' : '<div class="subtitle"><button id="btn-edit-series" class="mini" type="button" aria-label="Set series">Set series</button></div>';
     return '<div class="header"><div class="title-wrap"><h2 id="'+id+'" class="title">'+title+'</h2>'+series+'<div class="subtitle">'+authors+'</div></div><button class="close" type="button" aria-label="Close">×</button></div>';
   }
 
   function bodyArea(b){
-    const cover = (b&&b.coverUrl) ? b.coverUrl : ('https://covers.openlibrary.org/b/isbn/'+b.isbn13+'-M.jpg');
+    const esc = Utils.escapeHTML;
+    const cover = (b&&b.coverUrl) ? Utils.sanitizeURL(b.coverUrl) : ('https://covers.openlibrary.org/b/isbn/'+b.isbn13+'-M.jpg');
     const raw = (b.borrowHistory||[]);
     const isLent = raw.some(x=>!x.returnedAt);
     const last = raw.slice().reverse().find(x=>!x.returnedAt);
+    const lastBorrowerSafe = last ? esc(Utils.titleCaseName(last.borrower||'')) : '';
     const fmt = (ts)=>{ try{ const d=new Date(ts); return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }); }catch{ return ''; }};
     const items = raw.map((h, idx)=>{
-      const borrower = Utils.titleCaseName(h.borrower||'');
+      const borrowerSafe = esc(Utils.titleCaseName(h.borrower||''));
       const borrowed = fmt(h.borrowedAt);
       const returned = h.returnedAt ? fmt(h.returnedAt) : null;
       const status = returned ? 'Returned' : 'Out';
       const dateRange = returned ? `${borrowed} – ${returned}` : `${borrowed}`;
-      const line = `${borrower} | ${status} | ${dateRange}`;
-      return '<li data-idx="'+idx+'"><span class="row-line">'+line+'</span><span class="row-actions">'+
+      const lineSafe = esc(`${borrowerSafe} | ${status} | ${dateRange}`);
+      return '<li data-idx="'+idx+'"><span class="row-line">'+lineSafe+'</span><span class="row-actions">'+
              '<button type="button" class="mini edit" aria-label="Edit entry">Edit</button>'+
              '<button type="button" class="mini danger remove" aria-label="Remove entry">Remove</button></span></li>';
     }).join('')||'<li>None</li>';
@@ -47,7 +51,7 @@
       <div class="actions">
         <button id="btn-reenrich">Re-enrich metadata</button>
         <button id="btn-edit-series-2">Edit series</button>
-        ${!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+Utils.titleCaseName(last.borrower)+')' : '')+'</button>'}
+        ${!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+lastBorrowerSafe+')' : '')+'</button>'}
         <button id="btn-remove" class="danger">Remove</button>
       </div>`;
     return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" onerror="Utils.coverErr(this)" alt="Cover" /><div>'+actionsHtml+'<div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
@@ -72,6 +76,8 @@
 
     const titleId='book-modal-title';
     r.innerHTML = '<div class="panel">'+headerArea(current,titleId)+bodyArea(current)+'</div>';
+    // Replace inline onerror handlers in modal body with programmatic error fallback
+    try{ r.querySelectorAll('img[data-isbn]').forEach(img=>{ img.addEventListener('error', ()=> Utils.coverErr(img)); }); }catch{}
     r.setAttribute('aria-hidden','false');
     r.setAttribute('aria-labelledby',titleId);
     r.classList.add('open');
@@ -144,7 +150,8 @@
           results.slice(0,6).forEach((it,idx)=>{
             const row=document.createElement('button'); row.type='button'; row.style.display='grid'; row.style.gridTemplateColumns='48px 1fr'; row.style.alignItems='center'; row.style.gap='8px'; row.style.textAlign='left';
             const img=document.createElement('img'); img.src=it.image||''; img.alt=''; img.width=48; img.height=64; img.style.objectFit='cover'; img.style.background='#0a121f';
-            const meta=document.createElement('div'); meta.innerHTML = `<div style="font-weight:600">${it.title||''}</div><div class="muted" style="font-size:12px">${(it.authors||[]).join(', ')}</div>`;
+            const esc = Utils.escapeHTML;
+            const meta=document.createElement('div'); meta.innerHTML = `<div style="font-weight:600">${esc(it.title||'')}</div><div class="muted" style="font-size:12px">${esc((it.authors||[]).join(', '))}</div>`;
             row.appendChild(img); row.appendChild(meta);
             row.addEventListener('click', async ()=>{
               try{

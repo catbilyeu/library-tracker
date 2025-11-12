@@ -9,6 +9,16 @@
       cont.appendChild(div); setTimeout(()=>{ div.remove(); }, opts.duration||3000);
     },
 
+    // HTML escape for safe interpolation
+    escapeHTML(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    },
+
     // DOM helpers
     elementFromPointSafe(x,y){ const el = document.elementFromPoint(x,y); return el; },
     synthesizeClick(x, y){
@@ -57,26 +67,17 @@
       return core + check;
     },
 
-    // Cover fallbacks
-    async fetchGoogleCover(isbn13){
+    // Cover fallbacks and URL sanitization
+    sanitizeURL(url, opts={}){
       try{
-        const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn13}`;
-        const res = await fetch(url); if(!res.ok) return null;
-        const data = await res.json(); const item = data.items && data.items[0];
-        const link = item && item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail);
-        if(!link) return null; return link.replace('http://','https://');
-      } catch(e){ return null; }
-    },
-
-    // Cover fallbacks
-    async fetchGoogleCover(isbn13){
-      try{
-        const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn13}`;
-        const res = await fetch(url); if(!res.ok) return null;
-        const data = await res.json(); const item = data.items && data.items[0];
-        const link = item && item.volumeInfo && item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.thumbnail || item.volumeInfo.imageLinks.smallThumbnail);
-        if(!link) return null; return link.replace('http://','https://');
-      } catch(e){ return null; }
+        if(!url || typeof url !== 'string') return '';
+        let s = url.trim().replace(/["'<>\u0000-\u001F\u007F]/g,'');
+        const u = new URL(s, window.location.origin);
+        const proto = (u.protocol||'').toLowerCase();
+        const allowData = !!opts.allowData;
+        if(proto !== 'http:' && proto !== 'https:' && !(allowData && proto==='data:')) return '';
+        return u.href;
+      }catch{ return ''; }
     },
 
     async coverErr(img){

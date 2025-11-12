@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles/modal.css" />
   <link rel="stylesheet" href="styles/handsfree.css" />
 </head>
-<body>
+<body class="signed-out">
   <!-- Firebase (compat) SDKs in head with defer to ensure availability before app runs -->
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -28,7 +28,6 @@
         <option value="genre">Genre (A–Z)</option>
       </select>
       <div class="search-wrap">
-      <button id="btn-login" aria-label="Sign in" title="Sign in with Google">Sign in</button>
         <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
         <button id="btn-clear-search" class="icon small" aria-label="Clear search" title="Clear search" hidden>✕</button>
         <span id="results-count" class="results-count" aria-live="polite"></span>
@@ -40,6 +39,7 @@
       <button id="btn-scan" aria-label="Open scanner">Scan</button>
       <button id="toggle-handsfree" aria-pressed="false" aria-label="Motion cursor" title="Motion cursor">✋</button>
       <button id="toggle-voice" aria-pressed="false" aria-label="Voice" title="Voice">🎤</button>
+      <button id="btn-login" aria-label="Sign in" title="Sign in with Google">Sign in</button>
       
       <div class="menu" id="hamburger">
         <button class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-haspopup="true">☰</button>
@@ -62,7 +62,6 @@
       <h2 style="margin-top:0;margin-bottom:12px">Sign in</h2>
       <p style="margin:0 0 16px">Sign in with Google to sync your library across devices.</p>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button id="btn-auth-cancel" type="button">Cancel</button>
         <button id="btn-auth-google" type="button" class="accent">Sign in with Google</button>
       </div>
     </div>

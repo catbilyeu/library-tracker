@@ -177,3 +177,7 @@ main{ height: calc(100vh - 64px); overflow: hidden; display:block; }
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* When signed out, hide main app content and pager to prevent interaction */
+body.signed-out main{ display:none !important; }
+body.signed-out #pager{ display:none !important; }
