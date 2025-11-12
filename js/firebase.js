@@ -31,7 +31,18 @@
     if(!configured) return;
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    await auth.signInWithPopup(provider);
+    try{
+      await auth.signInWithPopup(provider);
+    }catch(e){
+      // Fallback for environments where popups are blocked or COOP causes issues in gapi
+      const code = e && e.code ? String(e.code) : '';
+      const msg = e && e.message ? String(e.message) : '';
+      if(code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || /popup/i.test(msg)){
+        await auth.signInWithRedirect(provider);
+      } else {
+        throw e;
+      }
+    }
   }
   async function signOut(){ if(!configured) return; await auth.signOut(); }
 
