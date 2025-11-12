@@ -314,6 +314,14 @@
       const overlay = document.getElementById('auth-overlay');
       if(user){
         Storage.setBackend(Firebase.CloudStorage);
+        // Clear any local bootstrap/demo books on first sign-in (one-time)
+        try{
+          const s = await Storage.getSettings();
+          if(!s.__cloudInitDone){
+            await Storage.clearLocalBooks?.();
+            await Storage.setSettings({ __cloudInitDone: true });
+          }
+        }catch{}
         if(loginBtn){ loginBtn.textContent = 'Sign out'; loginBtn.title = `Signed in as ${user.displayName||user.email||'user'}`; }
         if(overlay){ overlay.hidden = true; }
         Utils.toast(`Signed in as ${user.displayName||user.email}`, { type:'ok' });

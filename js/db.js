@@ -34,6 +34,7 @@
       publish(existing? 'book:updated' : 'book:added', { book });
       return book; },
     async deleteBook(isbn13){ const db = await getDB(); await db.delete('books', isbn13); publish('book:removed', { isbn13 }); },
+    async clearBooks(){ const db = await getDB(); const tx = db.transaction('books','readwrite'); await tx.objectStore('books').clear(); await tx.done; publish('shelves:render', {}); },
     async bulkPut(books){ const db = await getDB(); const tx = db.transaction('books','readwrite'); const store = tx.objectStore('books');
       for(const b of books){ await store.put(b); }
       await tx.done; publish('shelves:render', {}); publish('import:done', { addedCount: books.length, skippedCount: 0 }); },
@@ -56,7 +57,9 @@
     async bulkPut(books){ return this.backend.bulkPut(books); },
     async exportAll(){ return this.backend.exportAll(); },
     async getSettings(){ return this.backend.getSettings(); },
-    async setSettings(partial){ return this.backend.setSettings(partial); }
+    async setSettings(partial){ return this.backend.setSettings(partial); },
+    // Local-only utility
+    async clearLocalBooks(){ return StorageLocal.clearBooks(); }
   };
 
   window.StorageLocal = StorageLocal;
