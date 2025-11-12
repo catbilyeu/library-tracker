@@ -12,14 +12,13 @@
   <link rel="stylesheet" href="styles/handsfree.css" />
 </head>
 <body>
+  <!-- Firebase (compat) SDKs in head with defer to ensure availability before app runs -->
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="js/firebase.js"></script>
   <header class="app-header">
-  <!-- Firebase SDK (compat, for our legacy scripts) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/firebase.js"></script>
-
     <h1>Library Tracker</h1>
     <div class="controls">
       <select id="sort-select" aria-label="Sort books" title="Sort">

@@ -374,26 +374,6 @@
     // Render immediately (even if empty) to avoid blocking on bootstrap fetch
     Search.setIndex(books);
     Shelves.render(books);
-    // If empty, try to bootstrap in the background with a short timeout
-    if((books?.length||0) === 0){
-      const controller = new AbortController();
-      const t = setTimeout(()=> controller.abort(), 2500);
-      try{
-        const res = await fetch('real-books-50.json', { cache:'no-store', signal: controller.signal });
-        if(res.ok){
-          const data = await res.json();
-          const list = Object.values(data.books||{});
-          if(list.length){
-            await Storage.bulkPut(list);
-            Utils.toast(`Imported ${list.length} books (bootstrap)`, { type:'ok' });
-            books = await Storage.getAllBooks();
-            Search.setIndex(books);
-            Shelves.render(books);
-          }
-        }
-      }catch(e){ /* ignore bootstrap issues */ }
-      finally{ clearTimeout(t); }
-    }
   }
 
   // In dev or on GitHub Pages, always register SW to ensure cache busting takes effect

@@ -17,9 +17,20 @@
       auth = firebase.auth();
       db = firebase.firestore();
       dbg('[init] app=', !!app, 'projectId=', window.firebaseConfig && window.firebaseConfig.projectId);
-      // Prefer SESSION persistence for Incognito/3rd-party-restricted contexts
-      try{ await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION); dbg('[auth] setPersistence SESSION ok'); }
-      catch(e){ dbg('[auth] setPersistence failed', e?.code||e?.message||e); console.info('[Auth] setPersistence SESSION failed, using default', e?.code||e?.message||e); }
+      // Prefer LOCAL persistence (survives refresh). Fallback to SESSION for stricter contexts.
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        dbg('[auth] setPersistence LOCAL ok');
+      } catch(e1){
+        dbg('[auth] setPersistence LOCAL failed, trying SESSION', e1?.code||e1?.message||e1);
+        try{
+          await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+          dbg('[auth] setPersistence SESSION ok (fallback)');
+        } catch(e2){
+          dbg('[auth] setPersistence SESSION failed, using default', e2?.code||e2?.message||e2);
+          console.info('[Auth] setPersistence failed, using default');
+        }
+      }
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); dbg('[firestore] persistence enabled'); }
       catch(e){ dbg('[firestore] persistence not enabled', e?.code||e?.message||e); }
