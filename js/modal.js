@@ -54,7 +54,7 @@
         ${!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+lastBorrowerSafe+')' : '')+'</button>'}
         <button id="btn-remove" class="danger">Remove</button>
       </div>`;
-    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" onerror="Utils.coverErr(this)" alt="Cover" /><div>'+actionsHtml+'<div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
+    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" alt="Cover" /><div>'+actionsHtml+'<div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
   }
 
   function getFocusable(container){
