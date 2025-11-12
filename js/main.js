@@ -312,18 +312,45 @@
     subscribe('auth:state', async ({ user })=>{
       const loginBtn = document.getElementById('btn-login');
       const overlay = document.getElementById('auth-overlay');
+      const hideAuthOverlay = ()=>{
+        if(overlay){ overlay.hidden = true; try{ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); }catch{} }
+      };
       if(user){
         Storage.setBackend(Firebase.CloudStorage);
-        // Clear any local bootstrap/demo books on first sign-in (one-time)
+        // First-time sign-in: offer to import local books to cloud if cloud is empty
         try{
           const s = await Storage.getSettings();
-          if(!s.__cloudInitDone){
-            await Storage.clearLocalBooks?.();
-            await Storage.setSettings({ __cloudInitDone: true });
+          const alreadyInit = !!s.__cloudInitDone;
+          const localBooks = await window.StorageLocal.getAllBooks();
+          const cloudBooks = await Storage.getAllBooks();
+          if(!alreadyInit && (cloudBooks?.length||0) === 0 && (localBooks?.length||0) > 0){
+            const overlay2 = document.createElement('div'); overlay2.className='inline-overlay overlay-import-migrate'; overlay2.setAttribute('role','dialog'); overlay2.setAttribute('aria-modal','true');
+            const dialog = document.createElement('div'); dialog.className='dialog';
+            const h3 = document.createElement('h3'); h3.textContent = 'Import your local books to the cloud?';
+            const p = document.createElement('p'); p.textContent = `We found ${localBooks.length} book${localBooks.length===1?'':'s'} saved locally. Import them to your account so they sync across devices?`;
+            const actions = document.createElement('div'); actions.className='actions';
+            const skipBtn = document.createElement('button'); skipBtn.textContent='Skip';
+            const importBtn = document.createElement('button'); importBtn.className='accent'; importBtn.textContent='Import';
+            actions.appendChild(skipBtn); actions.appendChild(importBtn);
+            dialog.appendChild(h3); dialog.appendChild(p); dialog.appendChild(actions);
+            overlay2.appendChild(dialog); document.body.appendChild(overlay2);
+            const cleanup = ()=> overlay2.remove();
+            skipBtn.onclick = async ()=>{ await Storage.setSettings({ __cloudInitDone:true }); cleanup(); };
+            importBtn.onclick = async ()=>{
+              try{ await Storage.bulkPut(localBooks); await Storage.setSettings({ __cloudInitDone:true }); Utils.toast(`Imported ${localBooks.length} book${localBooks.length===1?'':'s'}`, { type:'ok' }); }
+              catch(e){ console.error('Import to cloud failed', e); Utils.toast('Import failed', { type:'error' }); }
+              finally{
+                try{ await Storage.clearLocalBooks?.(); }catch{}
+                cleanup();
+                const all = await Storage.getAllBooks(); Search.setIndex(all); Shelves.render(all);
+              }
+            };
+          } else if(!alreadyInit) {
+            await Storage.setSettings({ __cloudInitDone:true });
           }
-        }catch{}
+        }catch(e){ console.warn('First-time cloud init check failed', e); }
         if(loginBtn){ loginBtn.textContent = 'Sign out'; loginBtn.title = `Signed in as ${user.displayName||user.email||'user'}`; }
-        if(overlay){ overlay.hidden = true; }
+        hideAuthOverlay();
         Utils.toast(`Signed in as ${user.displayName||user.email}`, { type:'ok' });
         const all = await Storage.getAllBooks(); Search.setIndex(all); Shelves.render(all);
       } else {
