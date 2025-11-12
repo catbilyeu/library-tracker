@@ -1,36 +1,42 @@
 (function(){
   let publish = ()=>{}; let subscribe = ()=>{};
   let app = null, auth = null, db = null; let user = null; let configured = false;
+  const AUTH_DEBUG = /[?&]authdebug=1/i.test(location.search);
+  let dbgEl = null;
+  function dbg(){ if(!AUTH_DEBUG) return; if(!dbgEl){ dbgEl=document.createElement('div'); dbgEl.style.cssText='position:fixed;right:8px;bottom:8px;z-index:99999;background:rgba(0,0,0,.7);color:#fff;padding:8px 10px;border-radius:8px;max-width:60vw;font:12px/1.3 system-ui, -apple-system, Segoe UI, Roboto'; document.body.appendChild(dbgEl);} dbgEl.insertAdjacentHTML('beforeend', `<div>${Array.from(arguments).map(x=>String(x)).join(' ')}</div>`); }
 
   function hasConfig(){ return !!window.firebaseConfig && !!window.firebase && !!window.firebase.initializeApp; }
 
   async function init(api){
     publish = api.publish; subscribe = api.subscribe;
     configured = hasConfig();
+    dbg('[init] configured=', configured, 'origin=', location.origin);
     if(!configured){ console.info('[Firebase] No config found (js/firebase-config.js). Running in offline/local mode.'); return; }
     try{
       app = firebase.initializeApp(window.firebaseConfig);
       auth = firebase.auth();
       db = firebase.firestore();
+      dbg('[init] app=', !!app, 'projectId=', window.firebaseConfig && window.firebaseConfig.projectId);
       // Prefer SESSION persistence for Incognito/3rd-party-restricted contexts
-      try{ await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION); }
-      catch(e){ console.info('[Auth] setPersistence SESSION failed, using default', e?.code||e?.message||e); }
+      try{ await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION); dbg('[auth] setPersistence SESSION ok'); }
+      catch(e){ dbg('[auth] setPersistence failed', e?.code||e?.message||e); console.info('[Auth] setPersistence SESSION failed, using default', e?.code||e?.message||e); }
       // Enable offline persistence if possible
-      try{ await db.enablePersistence({ synchronizeTabs: true }); }
-      catch(e){ console.info('[Firestore] Persistence not available or already enabled', e?.code||e?.message||e); }
+      try{ await db.enablePersistence({ synchronizeTabs: true }); dbg('[firestore] persistence enabled'); }
+      catch(e){ dbg('[firestore] persistence not enabled', e?.code||e?.message||e); }
       // Process redirect result early to surface errors
       try {
         const res = await auth.getRedirectResult();
-        if(res && res.user){ /* signed in via redirect */ }
+        dbg('[auth] getRedirectResult user=', !!(res && res.user));
       } catch(e) {
         const code = e?.code || 'auth/unknown';
         const msg = e?.message || 'Sign-in failed';
         console.warn('[Auth] getRedirectResult error', code, msg);
+        dbg('[auth] getRedirectResult error', code, msg);
         try { Utils.toast(`Sign-in failed (${code.replace('auth/','')}): ${msg}`, { type:'error', duration:6000 }); } catch{}
-        // Common fix: add your GitHub Pages domain to Firebase Auth → Authorized domains
       }
       auth.onAuthStateChanged(async (u)=>{
         user = u || null;
+        dbg('[auth] state', !!user, user && user.uid);
         publish('auth:state', { user });
         // If we just returned from a redirect, hide the overlay and update UI
         try{
@@ -38,7 +44,7 @@
           if(overlay){ overlay.hidden = !!user; }
         }catch{}
       });
-    }catch(e){ console.error('[Firebase] init failed', e); configured=false; }
+    }catch(e){ console.error('[Firebase] init failed', e); dbg('[init] failed', e && (e.code||e.message||e)); configured=false; }
   }
 
   function isConfigured(){ return configured; }
@@ -49,10 +55,10 @@
     if(!configured) return;
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    // Force redirect flow to avoid COOP/popup issues on GitHub Pages and some browsers
+    dbg('[auth] signInWithRedirect start');
     await auth.signInWithRedirect(provider);
   }
-  async function signOut(){ if(!configured) return; await auth.signOut(); }
+  async function signOut(){ if(!configured) return; dbg('[auth] signOut'); await auth.signOut(); }
 
   // Firestore-based storage implementing the same API as local Storage
   const CloudStorage = {
