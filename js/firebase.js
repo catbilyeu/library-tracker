@@ -15,10 +15,14 @@
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); }
       catch(e){ console.info('[Firestore] Persistence not available or already enabled', e?.code||e?.message||e); }
-      // Auth state listener
       auth.onAuthStateChanged(async (u)=>{
         user = u || null;
         publish('auth:state', { user });
+        // If we just returned from a redirect, hide the overlay and update UI
+        try{
+          const overlay = document.getElementById('auth-overlay');
+          if(overlay){ overlay.hidden = !!user; }
+        }catch{}
       });
     }catch(e){ console.error('[Firebase] init failed', e); configured=false; }
   }
@@ -31,18 +35,8 @@
     if(!configured) return;
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    try{
-      await auth.signInWithPopup(provider);
-    }catch(e){
-      // Fallback for environments where popups are blocked or COOP causes issues in gapi
-      const code = e && e.code ? String(e.code) : '';
-      const msg = e && e.message ? String(e.message) : '';
-      if(code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || /popup/i.test(msg)){
-        await auth.signInWithRedirect(provider);
-      } else {
-        throw e;
-      }
-    }
+    // Force redirect flow to avoid COOP/popup issues on GitHub Pages and some browsers
+    await auth.signInWithRedirect(provider);
   }
   async function signOut(){ if(!configured) return; await auth.signOut(); }
 
