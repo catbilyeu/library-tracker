@@ -169,3 +169,11 @@ main{ height: calc(100vh - 64px); overflow: hidden; display:block; }
       rgba(255,179,138,.28) 80%),
     var(--button-hover);
 }
+
+/* Force-hide auth overlay when signed in or explicitly hidden */
+#auth-overlay[hidden],
+#auth-overlay.gone {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

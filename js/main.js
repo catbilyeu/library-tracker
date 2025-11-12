@@ -313,7 +313,7 @@
       const loginBtn = document.getElementById('btn-login');
       const overlay = document.getElementById('auth-overlay');
       const hideAuthOverlay = ()=>{
-        if(overlay){ overlay.hidden = true; try{ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); }catch{} }
+        if(overlay){ overlay.hidden = true; try{ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); overlay.classList.add('gone'); }catch{} }
       };
       if(user){
         Storage.setBackend(Firebase.CloudStorage);
