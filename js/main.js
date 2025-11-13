@@ -2,7 +2,7 @@
   // Simple event bus
   const handlers = new Map();
   function subscribe(event, fn){ if(!handlers.has(event)) handlers.set(event, new Set()); handlers.get(event).add(fn); }
-  function publish(event, payload){ const set = handlers.get(event); if(set){ for(const fn of set){ try{ fn(payload||{}); } catch(e){ console.error('Handler error for', event, e); } } } }
+  function publish(event, payload){ const set = handlers.get(event); if(set){ for(const fn of set){ try{ fn(payload||{}); } catch(e){ console.error('Handler error for', event, e); } } } window.__publish && window.__publish(event, payload); }
 
   function wireHeader(){
     document.getElementById('btn-scan').addEventListener('click', ()=> publish('scanner:open', {}));
@@ -13,6 +13,7 @@
       if(!isbn13 || !Utils.isValidISBN13(isbn13)){ Utils.toast('Invalid ISBN', { type:'error' }); return; }
       publish('book:add', { isbn13 });
       isbnInput.value = '';
+      try{ await Storage.setSettings({ lastAction: 'book:add', lastActionAt: Date.now() }); }catch{}
     };
     document.getElementById('btn-add').addEventListener('click', add);
     isbnInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); add(); } });
@@ -387,7 +388,10 @@
     HandsFree.init({ publish, subscribe });
     Voice.init({ publish, subscribe });
     Migrate.init({ publish, subscribe });
-    // Load settings and apply preferences without auto-enabling features or changing UI toggle states
+    // Wire event subscriptions for Hands-Free click and Voice intents
+    subscribe('handsfree:click', onHandsfreeClick);
+    subscribe('voice:intent', onVoiceIntent);
+    // Load settings and apply preferences
     try{
       const s = await Storage.getSettings();
       try{ Voice.setAnnouncements?.(s.voiceAnnouncements!==false); }catch{}
@@ -399,7 +403,19 @@
         if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
         else document.documentElement.removeAttribute('data-theme');
       }catch{}
-      // Do not touch aria-pressed for header buttons here
+      // Auto-enable features based on saved settings and reflect header toggle state
+      try{
+        if(s.handsFreeEnabled){
+          publish('handsfree:toggle', { enabled: true });
+          const btn = document.getElementById('toggle-handsfree');
+          if(btn) btn.setAttribute('aria-pressed','true');
+        }
+        if(s.voiceEnabled){
+          publish('voice:toggle', { enabled: true });
+          const btn = document.getElementById('toggle-voice');
+          if(btn) btn.setAttribute('aria-pressed','true');
+        }
+      }catch{}
     }catch{}
     Settings.init({ publish, subscribe });
 

@@ -32,6 +32,7 @@
     async putBook(book){ const db = await getDB(); const existing = await db.get('books', book.isbn13);
       await db.put('books', book);
       publish(existing? 'book:updated' : 'book:added', { book });
+      try{ if(window.localStorage){ localStorage.setItem('lastBookChange', String(Date.now())); } }catch{}
       return book; },
     async deleteBook(isbn13){ const db = await getDB(); await db.delete('books', isbn13); publish('book:removed', { isbn13 }); },
     async clearBooks(){ const db = await getDB(); const tx = db.transaction('books','readwrite'); await tx.objectStore('books').clear(); await tx.done; publish('shelves:render', {}); },

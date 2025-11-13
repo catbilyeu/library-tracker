@@ -363,7 +363,7 @@
     try{ e.preventDefault(); }catch{}
   }
 
-  function init(api){
+  async function init(api){
     publish=api.publish; subscribe=api.subscribe;
     ensureHUD();
     // external controls
@@ -371,14 +371,15 @@
     subscribe('voice:setAnnouncements', ({enabled})=>{ announcements = !!enabled; });
     subscribe('voice:setProcessDelay', ({ms})=>{ processDelayMs = Math.max(0, Number(ms)||0); });
     subscribe('voice:setPtt', ({enabled})=>{ setPttMode(!!enabled); });
-    // initialize from saved settings
     try{
-      Storage.getSettings().then(s=>{
-        announcements = s.voiceAnnouncements!==false;
-        if(typeof s.voiceProcessDelayMs === 'number') processDelayMs = Math.max(0, Number(s.voiceProcessDelayMs)||0);
-        setPttMode(!!s.voicePttOnly);
-        renderHUD();
-      }).catch(()=>{});
+      const s = await Storage.getSettings();
+      if(typeof s.handsFreeSensitivity === 'number') window.HandsFree?.setSensitivity?.(s.handsFreeSensitivity);
+      if(typeof s.handsFreeMirrorX === 'boolean') window.HandsFree?.setMirrorX?.(s.handsFreeMirrorX);
+      if(s.handsFreeDeviceId) window.HandsFree?.setDeviceId?.(s.handsFreeDeviceId);
+      announcements = s.voiceAnnouncements!==false;
+      if(typeof s.voiceProcessDelayMs === 'number') processDelayMs = Math.max(0, Number(s.voiceProcessDelayMs)||0);
+      setPttMode(!!s.voicePttOnly);
+      renderHUD();
     }catch{}
 
     // Hotkeys: push-to-talk Space
