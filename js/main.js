@@ -336,11 +336,9 @@
       if(user){
         document.body.classList.remove('signed-out');
         Storage.setBackend(Firebase.CloudStorage);
-        // Apply theme from cloud settings and mirror to local so it persists across sign-out
+        // Apply theme from cloud settings (per-user)
         try{
           const sCloud = await Storage.getSettings();
-          // Mirror to local for persistence when logged out
-          try{ await window.StorageLocal.setSettings(sCloud); }catch{}
           try{
             const t = sCloud.theme || 'dark';
             if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
