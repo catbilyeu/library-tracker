@@ -214,6 +214,9 @@
           const settings = await Storage.getSettings();
           if(settings.voiceAnnouncements!==false){
             const count = openLoans.length;
+    // Now that we’re listening for auth:state, initialize Firebase
+    try{ await Firebase.init({ publish, subscribe }); }catch{}
+
             const msg = `Return ${count} book${count===1?'':'s'} for ${borrower}?`;
             const utter = new SpeechSynthesisUtterance(msg);
             utter.lang = navigator.language || 'en-US';
@@ -314,8 +317,6 @@
   async function init(){
     // Init modules
     Storage.init(publish);
-    // Firebase init
-    try{ await Firebase.init({ publish, subscribe }); }catch{}
     // Switch Storage backend based on auth state
     subscribe('auth:state', async ({ user })=>{
       const loginBtn = document.getElementById('btn-login');
@@ -439,6 +440,9 @@
       }catch{}
     }catch{}
     Settings.init({ publish, subscribe });
+
+    // Initialize Firebase after wiring auth listener
+    try{ await Firebase.init({ publish, subscribe }); }catch{}
 
     // Wire header and events
     wireHeader();
