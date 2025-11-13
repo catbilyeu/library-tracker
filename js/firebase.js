@@ -41,15 +41,15 @@
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); dbg('[firestore] persistence enabled'); }
       catch(e){ dbg('[firestore] persistence not enabled', e?.code||e?.message||e); }
-      auth.onAuthStateChanged(async (u)=>{
-        user = u || null;
-        dbg('[auth] state', !!user, user && user.uid);
-        publish('auth:state', { user });
-        // If we just returned from a redirect, hide the overlay and update UI
-        try{
-          const overlay = document.getElementById('auth-overlay');
-          if(overlay){ overlay.hidden = !!user; }
-        }catch{}
+      // Ensure the auth redirect flow completes before proceeding (GitHub Pages can be slow to hydrate)
+      await new Promise((resolve) => {
+        let readyTimer = setTimeout(resolve, 2000); // fallback timeout
+        auth.onAuthStateChanged((u)=>{
+          user = u || null; dbg('[auth] state', !!user, user && user.uid);
+          publish('auth:state', { user });
+          try{ const overlay = document.getElementById('auth-overlay'); if(overlay){ overlay.hidden = !!user; } }catch{}
+          if(readyTimer){ clearTimeout(readyTimer); readyTimer = null; resolve(); }
+        });
       });
     }catch(e){ console.error('[Firebase] init failed', e); dbg('[init] failed', e && (e.code||e.message||e)); configured=false; }
   }
