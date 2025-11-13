@@ -34,17 +34,11 @@
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); dbg('[firestore] persistence enabled'); }
       catch(e){ dbg('[firestore] persistence not enabled', e?.code||e?.message||e); }
-      // Process redirect result early to surface errors
-      try {
-        const res = await auth.getRedirectResult();
-        dbg('[auth] getRedirectResult user=', !!(res && res.user));
-      } catch(e) {
-        const code = e?.code || 'auth/unknown';
-        const msg = e?.message || 'Sign-in failed';
-        console.warn('[Auth] getRedirectResult error', code, msg);
-        dbg('[auth] getRedirectResult error', code, msg);
-        try { Utils.toast(`Sign-in failed (${code.replace('auth/','')}): ${msg}`, { type:'error', duration:6000 }); } catch{}
-      }
+      // Auth state persistence: LOCAL
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        dbg('[auth] setPersistence LOCAL ok');
+      } catch(e1){ dbg('[auth] setPersistence LOCAL failed', e1?.code||e1?.message||e1); }
       auth.onAuthStateChanged(async (u)=>{
         user = u || null;
         dbg('[auth] state', !!user, user && user.uid);
@@ -88,7 +82,7 @@
   const CloudStorage = {
     async getAllBooks(){ if(!user) return []; const snap = await db.collection('users').doc(user.uid).collection('books').get(); return snap.docs.map(d=> d.data()); },
     async getBook(isbn13){ if(!user) return null; const d = await db.collection('users').doc(user.uid).collection('books').doc(isbn13).get(); return d.exists ? d.data() : null; },
-    async putBook(book){ if(!user) return book; const ref = db.collection('users').doc(user.uid).collection('books').doc(book.isbn13); await ref.set(book, { merge: true }); publish('shelves:render',{}); return book; },
+    async putBook(book){ if(!user) return book; const ref = db.collection('users').doc(user.uid).collection('books').doc(book.isbn13); await ref.set(book, { merge: true }); publish('book:updated', { book }); publish('shelves:render',{}); return book; },
     async deleteBook(isbn13){ if(!user) return; const ref = db.collection('users').doc(user.uid).collection('books').doc(isbn13); await ref.delete(); publish('book:removed', { isbn13 }); },
     async bulkPut(books){ if(!user) return; const batch = db.batch(); const col = db.collection('users').doc(user.uid).collection('books');
       for(const b of books){ batch.set(col.doc(b.isbn13), b, { merge: true }); }
