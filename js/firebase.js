@@ -4,6 +4,14 @@
   const AUTH_DEBUG = /[?&]authdebug=1/i.test(location.search);
   let dbgEl = null;
   function dbg(){ if(!AUTH_DEBUG) return; if(!dbgEl){ dbgEl=document.createElement('div'); dbgEl.style.cssText='position:fixed;right:8px;bottom:8px;z-index:99999;background:rgba(0,0,0,.7);color:#fff;padding:8px 10px;border-radius:8px;max-width:60vw;font:12px/1.3 system-ui, -apple-system, Segoe UI, Roboto'; document.body.appendChild(dbgEl);} dbgEl.insertAdjacentHTML('beforeend', `<div>${Array.from(arguments).map(x=>String(x)).join(' ')}</div>`); }
+  async function probeStorage(){
+    const res = { localStorage:false, indexedDB:false, cookies:false };
+    try{ const k='__probe_ls__'+Math.random(); localStorage.setItem(k,'1'); res.localStorage=true; localStorage.removeItem(k); }catch(e){ dbg('[probe] localStorage error', e?.message||e); }
+    try{ const req = indexedDB.open('__probe_idb__'); await new Promise((resolve)=>{ req.onupgradeneeded=()=>{}; req.onsuccess=()=>{ res.indexedDB=true; try{ req.result.close(); }catch{} resolve(); }; req.onerror=()=>{ dbg('[probe] idb error', req.error && (req.error.name+': '+req.error.message)); resolve(); }; }); }catch(e){ dbg('[probe] idb exception', e?.message||e); }
+    try{ document.cookie = `__probe_cookie__=1; max-age=10; path=/`; res.cookies = document.cookie.includes('__probe_cookie__=1'); }catch(e){ dbg('[probe] cookie error', e?.message||e); }
+    dbg('[probe] storage', JSON.stringify(res));
+    return res;
+  }
 
   function hasConfig(){ return !!window.firebaseConfig && !!window.firebase && !!window.firebase.initializeApp; }
 
@@ -17,13 +25,13 @@
       auth = firebase.auth();
       db = firebase.firestore();
       dbg('[init] app=', !!app, 'projectId=', window.firebaseConfig && window.firebaseConfig.projectId);
+      const env = await probeStorage();
+      dbg('[env] protocol=', location.protocol, 'cookies=', env.cookies, 'ls=', env.localStorage, 'idb=', env.indexedDB);
       // Prefer LOCAL persistence (survives refresh). Fallback to SESSION for stricter contexts.
       try{
-        if(location.protocol === 'file:'){
-          // file:// cannot persist auth; warn and use SESSION as best-effort
+        if(location.protocol === 'file:' || !env.cookies){
           await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
-          dbg('[auth] file:// detected, using SESSION (persistence across reloads may not work). Run a local server.');
-          try{ console.warn('[Auth] Running from file:// — use a local server for persistent login'); }catch{}
+          dbg('[auth] using SESSION persistence (file:// or cookies disabled)');
         } else {
           await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           dbg('[auth] setPersistence LOCAL ok');
