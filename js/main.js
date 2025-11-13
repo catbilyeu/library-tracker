@@ -335,6 +335,17 @@
       if(user){
         document.body.classList.remove('signed-out');
         Storage.setBackend(Firebase.CloudStorage);
+        // Apply theme from cloud settings and mirror to local so it persists across sign-out
+        try{
+          const sCloud = await Storage.getSettings();
+          // Mirror to local for persistence when logged out
+          try{ await window.StorageLocal.setSettings(sCloud); }catch{}
+          try{
+            const t = sCloud.theme || 'dark';
+            if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
+            else document.documentElement.removeAttribute('data-theme');
+          }catch{}
+        }catch{}
         // First-time sign-in: offer to import local books to cloud if cloud is empty
         try{
           const s = await Storage.getSettings();
@@ -373,6 +384,16 @@
         const all = await Storage.getAllBooks(); Search.setIndex(all); Shelves.render(all);
       } else {
         document.body.classList.add('signed-out');
+        // Preserve current theme/settings when signing out so the UI doesn't reset
+        try{
+          const prev = await Storage.getSettings(); // from current backend (likely cloud)
+          try{ await window.StorageLocal.setSettings(prev); }catch{}
+          try{
+            const t = prev.theme || 'dark';
+            if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
+            else document.documentElement.removeAttribute('data-theme');
+          }catch{}
+        }catch{}
         Storage.setBackend(window.StorageLocal);
         if(loginBtn){ loginBtn.textContent = 'Sign in'; loginBtn.title = 'Sign in with Google'; }
         // After sign out, show the login overlay so user can sign back in

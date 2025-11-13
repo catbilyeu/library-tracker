@@ -19,10 +19,17 @@
       dbg('[init] app=', !!app, 'projectId=', window.firebaseConfig && window.firebaseConfig.projectId);
       // Prefer LOCAL persistence (survives refresh). Fallback to SESSION for stricter contexts.
       try{
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        dbg('[auth] setPersistence LOCAL ok');
+        if(location.protocol === 'file:'){
+          // file:// cannot persist auth; warn and use SESSION as best-effort
+          await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+          dbg('[auth] file:// detected, using SESSION (persistence across reloads may not work). Run a local server.');
+          try{ console.warn('[Auth] Running from file:// — use a local server for persistent login'); }catch{}
+        } else {
+          await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          dbg('[auth] setPersistence LOCAL ok');
+        }
       } catch(e1){
-        dbg('[auth] setPersistence LOCAL failed, trying SESSION', e1?.code||e1?.message||e1);
+        dbg('[auth] setPersistence failed, trying SESSION', e1?.code||e1?.message||e1);
         try{
           await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
           dbg('[auth] setPersistence SESSION ok (fallback)');
@@ -34,11 +41,6 @@
       // Enable offline persistence if possible
       try{ await db.enablePersistence({ synchronizeTabs: true }); dbg('[firestore] persistence enabled'); }
       catch(e){ dbg('[firestore] persistence not enabled', e?.code||e?.message||e); }
-      // Auth state persistence: LOCAL
-      try{
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        dbg('[auth] setPersistence LOCAL ok');
-      } catch(e1){ dbg('[auth] setPersistence LOCAL failed', e1?.code||e1?.message||e1); }
       auth.onAuthStateChanged(async (u)=>{
         user = u || null;
         dbg('[auth] state', !!user, user && user.uid);
