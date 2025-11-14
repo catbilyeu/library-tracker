@@ -90,13 +90,6 @@
                   <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.6))*100))}%</span>
                 </div>
               </div>
-              <div class="settings-row">
-                <label for="hf-pinch-sens">Pinch sensitivity</label>
-                <div class="range-wrap">
-                  <input id="hf-pinch-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreePinchSensitivity ?? 0.25}" />
-                  <span id="hf-pinch-sens-value" class="muted">${(Math.round(((s.handsFreePinchSensitivity ?? 0.25))*100))}%</span>
-                </div>
-              </div>
             </div>
             <div class="settings-section">
               <h3>Voice</h3>
