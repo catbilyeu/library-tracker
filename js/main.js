@@ -219,6 +219,13 @@
         try{ Settings.close?.(); }catch{}
         // Close book modal if open
         try{ Modal.close?.(); }catch{}
+        // Close info modals (Hands-Free and Voice)
+        try{
+          ['hf-info-modal','voice-info-modal'].forEach(id=>{
+            const el = document.getElementById(id);
+            if(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+          });
+        }catch{}
         break; }
       case 'search': {
         publish('search:query', { q: payload.q });
