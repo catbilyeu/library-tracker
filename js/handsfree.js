@@ -25,17 +25,20 @@
   }
   // Pinch sensitivity (click/grab gesture)
   function mapPinchSensitivity(s){
+    // Higher s = more sensitive (easier to trigger): larger thresholds, shorter dwell
     s = clamp(Number(s)||0, 0, 1);
     const ease = Math.pow(s, 0.7); // more resolution at low end
-    const dwellMs = Math.round(550 - ease*370); // 550 → 180ms
-    const normThresh = 0.08 - ease*0.045;       // 0.080 → 0.035 (normalized distance)
-    // pixel threshold relative to viewport; recompute each time based on current window size
+    const dwellMs = Math.round(550 - ease*370); // 550 → 180ms as s increases
+    // Normalized thumb–index distance threshold: 0.035 (least sensitive) → 0.080 (most sensitive)
+    const normThresh = 0.035 + ease*0.045;      // 0.035 → 0.080
+    // Pixel threshold relative to viewport; recompute each time based on current window size
     const pixelThresholdPx = ()=>{
       const minDim = Math.min(window.innerWidth||1280, window.innerHeight||800);
-      const px = Math.round(minDim * (0.032 - ease*0.012)); // 3.2% → 2.0%
+      const px = Math.round(minDim * (0.020 + ease*0.012)); // 2.0% → 3.2%
       return clamp(px, 20, 48);
     };
-    const releaseNorm = normThresh + 0.008;     // hysteresis on release
+    // Hysteresis on release
+    const releaseNorm = normThresh + 0.008;
     const releasePx = (px)=> Math.round(px * 1.35);
     return { s, ease, dwellMs, normThresh, releaseNorm, pixelThresholdPx, releasePx };
   }
