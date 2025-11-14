@@ -105,13 +105,12 @@ button.danger:hover{background:linear-gradient(180deg, color-mix(in srgb, var(--
 #settings-panel{position:fixed;inset:0;z-index:1500}
 #settings-panel[hidden]{display:none}
 .settings-overlay{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(10px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:12px}
-.settings-panel{background:var(--panel-bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);width:min(96vw,960px);max-width:960px;max-height:88vh;overflow:auto;padding:18px}
-.settings-panel{--sp-max:88vh}.settings-panel{max-height:var(--sp-max)}@media (max-height:760px){.settings-panel{--sp-max:82vh}}@media (max-height:660px){.settings-panel{--sp-max:78vh}}
+.settings-panel{background:var(--panel-bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);width:min(96vw,960px);max-width:960px;/* no internal scroll */overflow:visible;padding:18px}
 
 .settings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:8px}
 .settings-header h2{margin:0;font-size:18px}
 .settings-header .muted{color:var(--muted);font-size:13px}
-.settings-body{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:min(92vw,900px)}
+.settings-body{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:12px}
 .settings-section{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;background:color-mix(in srgb, var(--card) 80%, transparent)}
 .settings-section h3{margin:0 0 8px 0;font-size:14px;color:var(--muted)}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}
@@ -123,10 +122,10 @@ button.danger:hover{background:linear-gradient(180deg, color-mix(in srgb, var(--
 .settings-section.handsfree .settings-row label{max-width:46%}
 
 .range-wrap{display:flex;align-items:center;gap:10px;width:100%}
-.settings-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+.settings-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
 button.icon.close{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:color-mix(in srgb, var(--card) 60%, transparent);color:var(--muted)}
 button.icon.close:hover{background:color-mix(in srgb, var(--card) 80%, transparent);color:var(--fg)}
-@media (max-width:980px){.settings-body{grid-template-columns:1fr;min-width:auto}}
+@media (max-width:980px){.settings-body{grid-template-columns:1fr}}
 
 /* Header hamburger menu */
 @media (min-width: 681px){ .app-header .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; } }
@@ -493,3 +492,13 @@ body.signed-out #pager{ display:none !important; }
 
 /* Hide experimental mobile "+" add button by default (desktop and mobile) */
 #btn-add-mobile{ display:none !important; }
+
+/* Settings: let sections size to content; avoid forced equal heights */
+.settings-body{ align-items: start; }
+.settings-section{ height: auto; }
+.settings-section.appearance{ grid-column: 1; }
+.settings-section.handsfree{ grid-column: 2; }
+.settings-section.voice{ grid-column: 2; }
+
+/* Ensure actions are visible without internal scroll and closer to content */
+.settings-actions{ position: static; margin-top: 8px; }
