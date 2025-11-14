@@ -6,6 +6,8 @@
   function close(){
     const r = root(); if(!r) return;
     if(keydownHandler){ r.removeEventListener('keydown',keydownHandler,true); keydownHandler=null; }
+    // Stop any active voice dictation session when the modal is closed
+    try{ publish('voice:dictation:stop', {}); }catch{}
     r.classList.remove('open'); r.classList.add('closing');
     const toRestore = previouslyFocused; previouslyFocused = null;
     setTimeout(()=>{
@@ -273,8 +275,11 @@
         overlay.appendChild(dialog);
         r.appendChild(overlay);
         input.focus();
-        overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); overlay.remove(); }});
-        cancelBtn.onclick=()=> overlay.remove();
+        // Hands-free auto dictation: start when input focused, stop on confirm/escape
+        try{ publish('voice:dictation:start', { target: input }); }catch{}
+        const stopDictation = ()=>{ try{ publish('voice:dictation:stop', {}); }catch{} };
+        overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); stopDictation(); overlay.remove(); }});
+        cancelBtn.onclick=()=>{ stopDictation(); overlay.remove(); };
         const parseDateVal=(v)=>{ if(!v) return Date.now(); try{ const d=new Date(v+'T00:00:00'); if(!isNaN(d.getTime())) return d.getTime(); }catch{} return Date.now(); };
         const confirm=async()=>{
           const borrower=(input.value||'').trim(); if(!borrower) return;
@@ -283,6 +288,7 @@
           current.borrowHistory.push({borrower,borrowedAt});
           await window.Storage.putBook(current);
           publish('borrow:lent',{isbn13:current.isbn13,borrower,borrowedAt});
+          stopDictation();
           overlay.remove();
         };
         confirmBtn.onclick=confirm;

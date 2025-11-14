@@ -15,6 +15,9 @@
   let processDelayMs=700; // buffer time before processing final text (to allow users to finish)
   let pttOnly=false; // push-to-talk mode (Spacebar)
 
+  // Temporary dictation session (auto-started for editable fields)
+  const dictation = { active:false, startedMic:false };
+
   // Mic selection (best-effort: Web Speech API doesn't expose device routing)
   let selectedMicDeviceId=null; let micStream=null; let micLabel='';
 
@@ -50,10 +53,21 @@
     if(tag === 'textarea') return true;
     if(tag === 'input'){
       const t = (el.type||'').toLowerCase();
-      return ['text','search','email','url','tel','number','password'].includes(t);
+      return ['text','search','email','url','tel','number','password','date'].includes(t);
     }
     return false;
   }
+  function isDateInput(el){ return !!el && el.tagName && el.tagName.toLowerCase()==='input' && (el.type||'').toLowerCase()==='date'; }
+  function isTextualEditable(el){
+    if(!el) return false;
+    if(isDateInput(el)) return false;
+    if(el.isContentEditable) return true;
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    if(tag==='textarea') return true;
+    if(tag==='input'){ const t=(el.type||'').toLowerCase(); return ['text','search','email','url','tel','number','password'].includes(t); }
+    return false;
+  }
+  function toDateInput(ts){ try{ const d=new Date(ts); const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }catch{ return ''; } }
 
   // Speak confirmation using SpeechSynthesis
   function speak(text){
@@ -223,6 +237,35 @@
         const txt = r[0]?.transcript || '';
         if(r.isFinal) finalText += txt; else interimText += txt;
       }
+      // If we are in dictation mode, apply text to the focused editable target instead of parsing commands
+      if(dictation.active){
+        try{
+          const el = dictation.target && document.activeElement === dictation.target ? dictation.target : document.activeElement;
+          if(el){
+            // Build combined transcript
+            const combined = `${finalText}${interimText}`.trim();
+            if(isDateInput(el)){
+              // For dates, only apply when we have a reasonably final phrase (avoid jitter on interim)
+              if(finalText){
+                const ts = Utils.parseDatePhrase ? Utils.parseDatePhrase(combined) : null;
+                if(ts){ el.value = toDateInput(ts); el.dispatchEvent(new Event('input', { bubbles:true })); el.dispatchEvent(new Event('change', { bubbles:true })); }
+              }
+            } else if(isTextualEditable(el)){
+              // Replace value/textContent with combined phrase
+              const val = combined;
+              if(el.tagName && el.tagName.toLowerCase()==='textarea'){ el.value = val; }
+              else if(el.tagName && el.tagName.toLowerCase()==='input'){ el.value = val; }
+              else if(el.isContentEditable){ el.textContent = val; }
+              // Fire input event so any bindings react
+              try{ el.dispatchEvent(new Event('input', { bubbles:true })); }catch{}
+            }
+          }
+        }catch{}
+        status = interimText ? 'listening' : 'processing';
+        renderHUD();
+        return;
+      }
+
       status = finalText ? 'processing' : 'listening';
       renderHUD();
       if(finalText){
@@ -251,7 +294,7 @@
 
     rec.onend = ()=>{
       // Chrome fires onend after stop() or after a pause.
-      if(restartOnEnd && isEnabled && (continuousMode || pttActive)){
+      if(restartOnEnd && (isEnabled || dictation.active) && (continuousMode || pttActive || dictation.active)){
         try{ rec.start(); status='listening'; renderHUD(); }catch{ /* noop */ }
       } else {
         status='idle'; renderHUD();
@@ -259,19 +302,19 @@
     };
   }
 
-  function startRecognition(){
+  function startRecognition(quiet){
     if(!supported()){ Utils.toast('Voice not supported', { type:'error' }); return; }
     ensureHUD();
     if(!rec) buildRecognizer();
     rec.continuous = continuousMode;
     try{ rec.start(); restartOnEnd=true; status='listening'; renderHUD(); }catch(e){ /* already started */ }
-    Utils.toast('Voice listening');
+    if(!quiet) Utils.toast('Voice listening');
   }
 
-  function stopRecognition(){
+  function stopRecognition(quiet){
     try{ restartOnEnd=false; rec?.stop(); }catch{}
     status='idle'; renderHUD();
-    Utils.toast('Voice stopped');
+    if(!quiet) Utils.toast('Voice stopped');
   }
 
   function toggle({ enabled }){
@@ -371,6 +414,21 @@
     subscribe('voice:setAnnouncements', ({enabled})=>{ announcements = !!enabled; });
     subscribe('voice:setProcessDelay', ({ms})=>{ processDelayMs = Math.max(0, Number(ms)||0); });
     subscribe('voice:setPtt', ({enabled})=>{ setPttMode(!!enabled); });
+    // Dictation control hooks from other modules (e.g., hands-free and modal)
+    subscribe('voice:dictation:start', ({ target })=>{
+      dictation.active = true; dictation.target = target || document.activeElement;
+      const wasListening = (status === 'listening');
+      dictation.startedMic = !wasListening;
+      if(!wasListening){ startRecognition(true); }
+    });
+    subscribe('voice:dictation:stop', ()=>{
+      if(dictation.active){
+        dictation.active=false;
+        if(dictation.startedMic){ stopRecognition(true); }
+        dictation.startedMic=false; dictation.target=null;
+        finalText=''; interimText=''; status='idle'; renderHUD();
+      }
+    });
     try{
       const s = await Storage.getSettings();
       if(typeof s.handsFreeSensitivity === 'number') window.HandsFree?.setSensitivity?.(s.handsFreeSensitivity);

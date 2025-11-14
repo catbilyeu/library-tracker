@@ -130,6 +130,34 @@
       setTimeout(()=> el.classList?.remove('hf-hover'), 500);
     }
     Utils.synthesizeClick(x, y);
+    // After the synthetic click settles, if the focused element is editable, start voice dictation
+    setTimeout(()=>{
+      try{
+        const ae = document.activeElement;
+        // If date input, open native picker if supported
+        if(ae && ae.tagName && ae.tagName.toLowerCase()==='input' && (ae.type||'').toLowerCase()==='date'){
+          try{ ae.showPicker && ae.showPicker(); }catch{}
+        }
+        if(isEditable(ae)){
+          // Ensure it has focus
+          ae.focus?.();
+          // Kick off dictation session (Voice will manage starting/stopping quietly)
+          publish('voice:dictation:start', { target: ae });
+        }
+      }catch{}
+    }, 0);
+  }
+
+  function isEditable(el){
+    if(!el) return false;
+    if(el.isContentEditable) return true;
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    if(tag==='textarea') return true;
+    if(tag==='input'){
+      const t=(el.type||'').toLowerCase();
+      return ['text','search','email','url','tel','number','password','date'].includes(t);
+    }
+    return false;
   }
 
   async function resolveBooks(query){
