@@ -286,6 +286,8 @@
         const date=document.createElement('input'); date.id='borrow-date'; date.type='date';
         // default to today in local timezone
         try{ const t=new Date(); const pad=n=>String(n).padStart(2,'0'); date.value = `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`; }catch{}
+        // Start voice dictation focused on the date field to accept spoken dates
+        setTimeout(()=>{ try{ publish('voice:dictation:start', { target: date }); }catch{} }, 0);
         const actions=document.createElement('div'); actions.className='actions';
         const cancelBtn=document.createElement('button'); cancelBtn.type='button'; cancelBtn.id='lend-cancel'; cancelBtn.textContent='Cancel';
         const confirmBtn=document.createElement('button'); confirmBtn.type='button'; confirmBtn.id='lend-confirm'; confirmBtn.className='accent'; confirmBtn.textContent='Confirm';

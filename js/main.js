@@ -130,16 +130,17 @@
       setTimeout(()=> el.classList?.remove('hf-hover'), 500);
     }
     // Attempt to focus a useful editable target before click, to help inputs pick up focus
+    let clickedTarget = null;
     try{
       let target = document.elementFromPoint(x, y);
-      target = target || el;
+      clickedTarget = target || el;
       // If it's a label pointing to an input, focus the input first
-      let candidate = target;
+      let candidate = clickedTarget;
       const isLabel = candidate && candidate.tagName && candidate.tagName.toLowerCase()==='label';
       if(isLabel){
         const forId = candidate.getAttribute('for');
         const linked = forId ? document.getElementById(forId) : null;
-        if(linked){ linked.focus?.(); }
+        if(linked){ linked.focus?.(); candidate = linked; }
       }
       // If not label or label had no target, find nearest editable inside or above
       if(!document.activeElement || document.activeElement===document.body){
@@ -160,24 +161,35 @@
     }catch{}
 
     Utils.synthesizeClick(x, y);
-    // After the synthetic click settles, if the focused element is editable, start voice dictation
+    // After the synthetic click settles, try to open date pickers and then optionally start dictation
     setTimeout(()=>{
       try{
+        const isDateInput = (node)=> node && node.tagName && node.tagName.toLowerCase()==='input' && (node.type||'').toLowerCase()==='date';
+        // Prefer the element we actually clicked, then fall back to activeElement
         let ae = document.activeElement;
-        // If the element under point was a label, try focusing its linked input again post-click
-        if(ae && ae.tagName && ae.tagName.toLowerCase()==='label'){
-          const forId = ae.getAttribute('for');
+        let preferred = clickedTarget;
+        // If we clicked a label, resolve its control again
+        if(preferred && preferred.tagName && preferred.tagName.toLowerCase()==='label'){
+          const forId = preferred.getAttribute('for');
           const linked = forId ? document.getElementById(forId) : null;
-          if(linked){ linked.focus?.(); ae = linked; }
+          if(linked) preferred = linked;
         }
-        // If date input, open native picker if supported
-        if(ae && ae.tagName && ae.tagName.toLowerCase()==='input' && (ae.type||'').toLowerCase()==='date'){
-          try{ ae.showPicker && ae.showPicker(); }catch{}
+        // If we clicked inside something that contains a date input, grab that
+        if(preferred && !isDateInput(preferred) && preferred.closest){
+          const inside = preferred.closest('input[type="date"]') || (preferred.querySelector && preferred.querySelector('input[type="date"]')) || null;
+          if(inside) preferred = inside;
         }
+        // If either preferred or active element is a date input, focus and attempt to open its picker
+        const dateEl = isDateInput(preferred) ? preferred : (isDateInput(ae) ? ae : null);
+        if(dateEl){
+          dateEl.focus?.();
+          try{ if(typeof dateEl.showPicker === 'function'){ dateEl.showPicker(); } }catch{}
+          // Do NOT start dictation on date inputs; they are not text fields
+          return;
+        }
+        // Otherwise, if the focused element is an editable text field, start dictation
         if(isEditable(ae)){
-          // Ensure it has focus
           ae.focus?.();
-          // Kick off dictation session (Voice will manage starting/stopping quietly)
           publish('voice:dictation:start', { target: ae });
         }
       }catch{}
@@ -575,6 +587,12 @@
         if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
         else document.documentElement.removeAttribute('data-theme');
       }catch{}
+      // Hands-Free tuning at startup
+      try{
+        if(typeof s.handsFreeSensitivity === 'number') HandsFree.setSensitivity?.(s.handsFreeSensitivity);
+        if(typeof s.handsFreePinchSensitivity === 'number') HandsFree.setPinchSensitivity?.(s.handsFreePinchSensitivity);
+        if(typeof s.handsFreeMirrorX === 'boolean') HandsFree.setMirrorX?.(!!s.handsFreeMirrorX);
+      }catch{}
       // Auto-enable features based on saved settings and reflect header toggle state
       try{
         if(s.handsFreeEnabled){
@@ -613,7 +631,8 @@
   }
 
   // In dev or on GitHub Pages, always register SW to ensure cache busting takes effect
-  if ('serviceWorker' in navigator) {
+  // Only register Service Worker on secure origins (https or localhost). Avoids errors on file:// or custom schemes.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     // Auto-reload the page once when a new Service Worker takes control to avoid mixed old/new assets
     let swRefreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {

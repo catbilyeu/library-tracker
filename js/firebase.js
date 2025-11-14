@@ -27,23 +27,37 @@
       dbg('[init] app=', !!app, 'projectId=', window.firebaseConfig && window.firebaseConfig.projectId);
       const env = await probeStorage();
       dbg('[env] protocol=', location.protocol, 'cookies=', env.cookies, 'ls=', env.localStorage, 'idb=', env.indexedDB);
-      // Prefer LOCAL persistence (survives refresh). Fallback to SESSION for stricter contexts.
+      // Choose the safest persistence based on environment capabilities.
+      // Priority: LOCAL (best) → SESSION → NONE (for environments with disabled storage like iOS Private mode)
       try{
-        if(location.protocol === 'file:' || !env.cookies){
-          await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
-          dbg('[auth] using SESSION persistence (file:// or cookies disabled)');
-        } else {
+        const canLocal = !!env.localStorage && !!env.cookies;
+        const canSession = !!env.localStorage || !!env.cookies;
+        if(location.protocol === 'file:' || (!canLocal && !canSession)){
+          await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+          dbg('[auth] using NONE persistence (file:// or storage/cookies disabled)');
+        } else if(canLocal){
           await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           dbg('[auth] setPersistence LOCAL ok');
+        } else if(canSession){
+          await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+          dbg('[auth] setPersistence SESSION ok');
+        } else {
+          await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+          dbg('[auth] setPersistence NONE (fallback)');
         }
       } catch(e1){
-        dbg('[auth] setPersistence failed, trying SESSION', e1?.code||e1?.message||e1);
+        dbg('[auth] setPersistence primary choice failed', e1?.code||e1?.message||e1);
         try{
           await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
-          dbg('[auth] setPersistence SESSION ok (fallback)');
+          dbg('[auth] setPersistence SESSION ok (secondary)');
         } catch(e2){
-          dbg('[auth] setPersistence SESSION failed, using default', e2?.code||e2?.message||e2);
-          console.info('[Auth] setPersistence failed, using default');
+          try{
+            await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+            dbg('[auth] setPersistence NONE ok (last resort)');
+          } catch(e3){
+            dbg('[auth] setPersistence NONE failed, using default', e3?.code||e3?.message||e3);
+            console.info('[Auth] setPersistence failed, using default');
+          }
         }
       }
       // Enable offline persistence if possible
@@ -73,6 +87,13 @@
 
   async function signIn(){
     if(!configured) return;
+    const isSecureOrigin = (location.protocol === 'https:' || location.hostname === 'localhost' || location.protocol === 'http:');
+    if(!isSecureOrigin){
+      dbg('[auth] blocked: insecure origin (requires http/https or localhost)');
+      try{ Utils.toast('Sign-in requires HTTPS or localhost. Please run a local server or visit the live site.', { type:'warn' }); }catch{}
+      publish('auth:require', {});
+      return;
+    }
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try{

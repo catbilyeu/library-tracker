@@ -1,3 +1,5 @@
+// (local-only) pinch sensitivity slider + mapping; no push
+
 (function(){
   let publish=()=>{}; let subscribe=()=>{}; let isEnabled=false;
   let cursor=null; let overlay=null; let video=null; let stream=null; let hands=null;
@@ -12,28 +14,34 @@
   let sendErrorCount=0;
 
   function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  // Cursor movement sensitivity (position smoothing, step caps, debounce)
   function mapSensitivity(s){
     s = clamp(Number(s)||0, 0, 1);
-    // Re-tuned for responsiveness at all levels:
-    // - Much smaller deadzone (prevents "won't move" feeling)
-    // - Higher alpha so cursor catches up faster
-    // - Modest step cap to avoid teleports
-    // - Short debounce so repeated pinches register
     const deadzone = Math.round(18 - s*12);      // px (18 -> 6)
     const alpha = 0.22 + s*(0.23);               // smoothing factor (0.22 -> 0.45)
     const debounceMs = Math.round(220 + (1-s)*80);  // ms (300 -> 220)
     const maxStep = Math.round(36 + s*28);       // px/frame cap (36 -> 64)
-
-    // Pinch detection: viewport-relative + a bit more forgiving; also ease at lower sensitivity
-    const minDim = Math.min(window.innerWidth||1280, window.innerHeight||800);
-    const baseThresh = minDim * 0.028;           // ~2.8% of min viewport dim
-    const pinchThresholdPx = clamp(Math.round(baseThresh + (1 - s) * 6), 24, 48);
-    const pinchDwellMs = Math.round(120 - s*40); // hold before click (120 -> 80ms)
-
-    return { s, deadzone, alpha, debounceMs, maxStep, pinchThresholdPx, pinchDwellMs };
+    return { s, deadzone, alpha, debounceMs, maxStep };
   }
-  // Default sensitivity set to 60% for balance
-  let cfg = mapSensitivity(0.6);
+  // Pinch sensitivity (click/grab gesture)
+  function mapPinchSensitivity(s){
+    s = clamp(Number(s)||0, 0, 1);
+    const ease = Math.pow(s, 0.7); // more resolution at low end
+    const dwellMs = Math.round(550 - ease*370); // 550 → 180ms
+    const normThresh = 0.08 - ease*0.045;       // 0.080 → 0.035 (normalized distance)
+    // pixel threshold relative to viewport; recompute each time based on current window size
+    const pixelThresholdPx = ()=>{
+      const minDim = Math.min(window.innerWidth||1280, window.innerHeight||800);
+      const px = Math.round(minDim * (0.032 - ease*0.012)); // 3.2% → 2.0%
+      return clamp(px, 20, 48);
+    };
+    const releaseNorm = normThresh + 0.008;     // hysteresis on release
+    const releasePx = (px)=> Math.round(px * 1.35);
+    return { s, ease, dwellMs, normThresh, releaseNorm, pixelThresholdPx, releasePx };
+  }
+  // Defaults
+  let cfg = mapSensitivity(0.6);                 // cursor
+  let pinchCfg = mapPinchSensitivity(0.25);      // pinch (separate)
   // Mirror X by default so cursor follows your hand naturally with a front camera
   let mirrorX = true;
 
@@ -42,6 +50,7 @@
     try{
       const s = await Storage.getSettings();
       if(typeof s.handsFreeSensitivity === 'number') cfg = mapSensitivity(s.handsFreeSensitivity);
+      if(typeof s.handsFreePinchSensitivity === 'number') pinchCfg = mapPinchSensitivity(s.handsFreePinchSensitivity);
       if(typeof s.handsFreeMirrorX === 'boolean') mirrorX = !!s.handsFreeMirrorX;
       if(s.handsFreeDeviceId) deviceId = s.handsFreeDeviceId;
       settingsLoaded = true;
@@ -108,19 +117,22 @@
     const open = (tip.y < mid6.y && tip12.y < mid10.y);
 
     // Dual-threshold pinch detection: pixel + normalized (accounts for distance from camera)
-    const pixelThresh = cfg.pinchThresholdPx;
-    const normThresh = 0.055 - cfg.s*0.02; // 0.055 @ s=0 → 0.035 @ s=1
+    const pixelThresh = pinchCfg.pixelThresholdPx();
+    const normThresh = pinchCfg.normThresh;
     const isPinched = (pinchDistPx <= pixelThresh) || (pinchDistNorm <= normThresh);
+    // On pinch, always move cursor to current position to ensure we click what's under the fingers
     // Freeze pointer at current position while pinched to avoid bounce caused by fingertip shift
     if(isPinched){
       if(!pinchDown){
         pinchDown = true; pinchStart = now; pinchFired = false;
-        freeze = true; freezeX = (prevX!=null? prevX : x); freezeY = (prevY!=null? prevY : y);
+        freeze = true; freezeX = x; freezeY = y;
+        // move cursor to pinch point immediately for precise click target
+        prevX = x; prevY = y; if(cursor){ cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
       }
       // If sustained beyond dwell and not within debounce, fire once per pinch
-      if(!pinchFired && (now - pinchStart) >= cfg.pinchDwellMs && (now - lastClick) > cfg.debounceMs){
+      if(!pinchFired && (now - pinchStart) >= pinchCfg.dwellMs && (now - lastClick) > cfg.debounceMs){
         lastClick = now; pinchFired = true; // keep freeze until pinch releases
-        publish('handsfree:click', { x: (prevX!=null? prevX : x), y: (prevY!=null? prevY : y) });
+        publish('handsfree:click', { x: Math.round(x), y: Math.round(y) });
       }
     } else {
       // Release
@@ -128,8 +140,8 @@
         pinchDown = false; pinchFired = false;
       }
       // Hysteresis on release for both thresholds
-      const releasedPx = pinchDistPx > (pixelThresh + 4);
-      const releasedNorm = pinchDistNorm > (normThresh + 0.008);
+      const releasedPx = pinchDistPx > pinchCfg.releasePx(pixelThresh);
+      const releasedNorm = pinchDistNorm > pinchCfg.releaseNorm;
       if(releasedPx && releasedNorm){ freeze = false; }
     }
 
@@ -350,10 +362,10 @@
   }
 
   function setSensitivity(v){ cfg = mapSensitivity(v); try{ Storage?.setSettings?.({ handsFreeSensitivity: cfg.s }); } catch{} }
+  function setPinchSensitivity(v){ pinchCfg = mapPinchSensitivity(v); try{ Storage?.setSettings?.({ handsFreePinchSensitivity: pinchCfg.s }); } catch{} }
   function setMirrorX(v){ mirrorX = !!v; try{ Storage?.setSettings?.({ handsFreeMirrorX: mirrorX }); } catch{} }
   function setDeviceId(id){ deviceId = id || null; try{ Storage?.setSettings?.({ handsFreeDeviceId: deviceId }); } catch{} if(isEnabled){ stop().then(start); } }
 
   function init(api){ publish=api.publish; subscribe=api.subscribe; subscribe('handsfree:toggle', toggle); }
 
-  window.HandsFree = { init, toggle, setSensitivity, setDeviceId, setMirrorX };
-})();
+  window.HandsFree = { init, toggle, setSensitivity, setPinchSensitivity, setDeviceId, setMirrorX };})();

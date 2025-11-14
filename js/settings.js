@@ -1,3 +1,5 @@
+// (local-only) pinch sensitivity slider; no push
+
 (function(){
   let publish=()=>{}; let subscribe=()=>{};
   const elRootId = 'settings-panel';
@@ -55,7 +57,7 @@
             <button class="icon close" id="settings-close" aria-label="Close">✕</button>
           </div>
           <div class="settings-body">
-            <div class="settings-section">
+            <div class="settings-section appearance">
               <h3>Appearance</h3>
               <div class="settings-row">
                 <label for="theme-select">Theme</label>
@@ -67,7 +69,7 @@
                 </select>
               </div>
             </div>
-            <div class="settings-section">
+            <div class="settings-section handsfree">
               <h3>Hands-Free</h3>
               <div class="settings-row">
                 <label for="hf-enabled">Enable Hands-Free</label>
@@ -82,10 +84,17 @@
                 <select id="camera-select" aria-label="Camera"></select>
               </div>
               <div class="settings-row">
-                <label for="hf-sens">Sensitivity</label>
+                <label for="hf-sens">Cursor sensitivity</label>
                 <div class="range-wrap">
                   <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.6}" />
                   <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.6))*100))}%</span>
+                </div>
+              </div>
+              <div class="settings-row">
+                <label for="hf-pinch-sens">Pinch sensitivity</label>
+                <div class="range-wrap">
+                  <input id="hf-pinch-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreePinchSensitivity ?? 0.25}" />
+                  <span id="hf-pinch-sens-value" class="muted">${(Math.round(((s.handsFreePinchSensitivity ?? 0.25))*100))}%</span>
                 </div>
               </div>
             </div>
@@ -131,7 +140,10 @@
 
     // Sens value live
     const sens = qs(root, '#hf-sens'); const sensVal = qs(root, '#hf-sens-value');
-    sens.addEventListener('input', ()=>{ sensVal.textContent = `${Math.round(+sens.value*100)}%`; });
+    sens.addEventListener('input', ()=>{ sensVal.textContent = `${Math.round(+sens.value*100)}%`; window.HandsFree?.setSensitivity?.(parseFloat(sens.value)); });
+    // Pinch sens live
+    const ps = qs(root, '#hf-pinch-sens'); const psVal = qs(root, '#hf-pinch-sens-value');
+    ps.addEventListener('input', ()=>{ psVal.textContent = `${Math.round(+ps.value*100)}%`; window.HandsFree?.setPinchSensitivity?.(parseFloat(ps.value)); });
     const vDelay = qs(root, '#voice-delay'); const vDelayVal = qs(root, '#voice-delay-value');
     vDelay.addEventListener('input', ()=>{ vDelayVal.textContent = `${vDelay.value} ms`; });
 
@@ -147,6 +159,7 @@
         cameraDeviceId: camSel.value || '',
         micDeviceId: micSel.value || '',
         handsFreeSensitivity: parseFloat(sens.value),
+        handsFreePinchSensitivity: parseFloat(ps.value),
         handsFreeMirrorX: qs(root,'#hf-mirror').checked,
         voiceProcessDelayMs: parseInt(vDelay.value,10),
         theme: (qs(root,'#theme-select')?.value || 'dark'),
