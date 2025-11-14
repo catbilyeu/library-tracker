@@ -614,6 +614,11 @@
 
   // In dev or on GitHub Pages, always register SW to ensure cache busting takes effect
   if ('serviceWorker' in navigator) {
+    // Auto-reload the page once when a new Service Worker takes control to avoid mixed old/new assets
+    let swRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (swRefreshing) return; swRefreshing = true; window.location.reload();
+    });
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').then(()=>{
         try{ navigator.serviceWorker.getRegistrations().then(rs=> rs.forEach(r=> r.update())); }catch{}
