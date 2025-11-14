@@ -84,8 +84,8 @@
               <div class="settings-row">
                 <label for="hf-sens">Sensitivity</label>
                 <div class="range-wrap">
-                  <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.75}" />
-                  <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.75))*100))}%</span>
+                  <input id="hf-sens" type="range" min="0" max="1" step="0.05" value="${s.handsFreeSensitivity ?? 0.6}" />
+                  <span id="hf-sens-value" class="muted">${(Math.round(((s.handsFreeSensitivity ?? 0.6))*100))}%</span>
                 </div>
               </div>
             </div>
@@ -149,11 +149,12 @@
         handsFreeSensitivity: parseFloat(sens.value),
         handsFreeMirrorX: qs(root,'#hf-mirror').checked,
         voiceProcessDelayMs: parseInt(vDelay.value,10),
-        theme: (qs(root,'#theme-select')?.value || 'dark')
+        theme: (qs(root,'#theme-select')?.value || 'dark'),
+        settingsUpdatedAt: Date.now()
       };
       try{
         const saved = await window.Storage.setSettings(next);
-        // Apply device and tuning settings only; do not auto-toggle features on
+        // Apply device and tuning settings
         try{ window.HandsFree?.setDeviceId?.(saved.cameraDeviceId); } catch{}
         try{ window.Voice?.setMicDeviceId?.(saved.micDeviceId); } catch{}
         try{ window.HandsFree?.setSensitivity?.(saved.handsFreeSensitivity); } catch{}
@@ -169,7 +170,17 @@
             document.documentElement.removeAttribute('data-theme');
           }
         }catch{}
-        // Do not change header toggle UI state here; reflect actual runtime state only when user toggles
+        // Toggle features now to reflect user intent, and update header state
+        try{
+          const hfBtn = document.getElementById('toggle-handsfree');
+          if(hfBtn){ hfBtn.setAttribute('aria-pressed', String(!!saved.handsFreeEnabled)); }
+          window.App?.publish?.('handsfree:toggle', { enabled: !!saved.handsFreeEnabled });
+        }catch{}
+        try{
+          const vBtn = document.getElementById('toggle-voice');
+          if(vBtn){ vBtn.setAttribute('aria-pressed', String(!!saved.voiceEnabled)); }
+          window.App?.publish?.('voice:toggle', { enabled: !!saved.voiceEnabled });
+        }catch{}
         Utils.toast('Settings applied', { type:'ok' });
         close();
       }catch(e){ console.error(e); Utils.toast('Failed to save settings', { type:'error' }); }

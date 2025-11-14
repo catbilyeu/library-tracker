@@ -11,20 +11,29 @@
   let prevX=null, prevY=null; let lastFrameTs=null; let fpsAvg=null;
   let sendErrorCount=0;
 
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
   function mapSensitivity(s){
-    s = Math.max(0, Math.min(1, Number(s)||0));
-    // More stable defaults: larger deadzone, gentler smoothing, smaller max step
-    const deadzone = Math.round(60 - s*52);      // px (60 -> 8)
-    const alpha = 0.08 + s*(0.32);               // smoothing factor (0.08 -> 0.40)
-    const debounceMs = Math.round(1400 - s*900); // ms (1400 -> 500)
-    const maxStep = 14 + s*26;                   // px/frame cap (14 -> 40)
-    // Pinch (grab) tuning scales by sensitivity
-    const pinchThresholdPx = 16 + s*20;          // required pinch tightness (16 -> 36 px)
-    const pinchDwellMs = Math.round(180 - s*120);// hold pinch before click (180 -> 60 ms)
+    s = clamp(Number(s)||0, 0, 1);
+    // Re-tuned for responsiveness at all levels:
+    // - Much smaller deadzone (prevents "won't move" feeling)
+    // - Higher alpha so cursor catches up faster
+    // - Modest step cap to avoid teleports
+    // - Short debounce so repeated pinches register
+    const deadzone = Math.round(18 - s*12);      // px (18 -> 6)
+    const alpha = 0.22 + s*(0.23);               // smoothing factor (0.22 -> 0.45)
+    const debounceMs = Math.round(220 + (1-s)*80);  // ms (300 -> 220)
+    const maxStep = Math.round(36 + s*28);       // px/frame cap (36 -> 64)
+
+    // Pinch detection: viewport-relative + a bit more forgiving; also ease at lower sensitivity
+    const minDim = Math.min(window.innerWidth||1280, window.innerHeight||800);
+    const baseThresh = minDim * 0.028;           // ~2.8% of min viewport dim
+    const pinchThresholdPx = clamp(Math.round(baseThresh + (1 - s) * 6), 24, 48);
+    const pinchDwellMs = Math.round(120 - s*40); // hold before click (120 -> 80ms)
+
     return { s, deadzone, alpha, debounceMs, maxStep, pinchThresholdPx, pinchDwellMs };
   }
-  // Default sensitivity set to 75% for a snappier cursor
-  let cfg = mapSensitivity(0.75);
+  // Default sensitivity set to 60% for balance
+  let cfg = mapSensitivity(0.6);
   // Mirror X by default so cursor follows your hand naturally with a front camera
   let mirrorX = true;
 
@@ -65,6 +74,9 @@
 
   // Pinch detection state
   let pinchDown = false; let pinchStart = 0;
+  let pinchFired = false;
+  // Freeze pointer while pinching to prevent cursor bounce when thumb approaches index
+  let freeze = false; let freezeX = 0; let freezeY = 0;
 
   function onResults(results){
     if(!isEnabled) return;
@@ -82,30 +94,47 @@
     const normX = mirrorX ? (1 - tip.x) : tip.x;
     const x = Math.max(0, Math.min(window.innerWidth, normX * window.innerWidth));
     const y = Math.max(0, Math.min(window.innerHeight, tip.y * window.innerHeight));
-    smoothMove(x,y);
 
     // Click/grab detection using pinch (thumb–index distance + dwell)
-    // Compute pinch distance in screen pixels
+    // Compute pinch distance in screen and normalized units
     const tipXpx = x; const tipYpx = y;
     const thumbXnorm = mirrorX ? (1 - thumb.x) : thumb.x;
     const thumbXpx = Math.max(0, Math.min(window.innerWidth, thumbXnorm * window.innerWidth));
     const thumbYpx = Math.max(0, Math.min(window.innerHeight, thumb.y * window.innerHeight));
-    const pinchDist = Math.hypot(tipXpx - thumbXpx, tipYpx - thumbYpx);
+    const pinchDistPx = Math.hypot(tipXpx - thumbXpx, tipYpx - thumbYpx);
+    const pinchDistNorm = Math.hypot((mirrorX ? (1-tip.x) : tip.x) - thumbXnorm, tip.y - thumb.y);
 
     // Open-hand heuristic (for HUD only)
     const open = (tip.y < mid6.y && tip12.y < mid10.y);
 
-    const isPinched = pinchDist <= cfg.pinchThresholdPx;
+    // Dual-threshold pinch detection: pixel + normalized (accounts for distance from camera)
+    const pixelThresh = cfg.pinchThresholdPx;
+    const normThresh = 0.055 - cfg.s*0.02; // 0.055 @ s=0 → 0.035 @ s=1
+    const isPinched = (pinchDistPx <= pixelThresh) || (pinchDistNorm <= normThresh);
+    // Freeze pointer at current position while pinched to avoid bounce caused by fingertip shift
     if(isPinched){
-      if(!pinchDown){ pinchDown = true; pinchStart = now; }
-      // If sustained beyond dwell and not within debounce, fire once
-      if(pinchDown && (now - pinchStart) >= cfg.pinchDwellMs && (now - lastClick) > cfg.debounceMs){
-        lastClick = now; pinchDown = false; // consume pinch
-        publish('handsfree:click', { x: prevX||x, y: prevY||y });
+      if(!pinchDown){
+        pinchDown = true; pinchStart = now; pinchFired = false;
+        freeze = true; freezeX = (prevX!=null? prevX : x); freezeY = (prevY!=null? prevY : y);
+      }
+      // If sustained beyond dwell and not within debounce, fire once per pinch
+      if(!pinchFired && (now - pinchStart) >= cfg.pinchDwellMs && (now - lastClick) > cfg.debounceMs){
+        lastClick = now; pinchFired = true; // keep freeze until pinch releases
+        publish('handsfree:click', { x: (prevX!=null? prevX : x), y: (prevY!=null? prevY : y) });
       }
     } else {
-      pinchDown = false;
+      // Release
+      if(pinchDown){
+        pinchDown = false; pinchFired = false;
+      }
+      // Hysteresis on release for both thresholds
+      const releasedPx = pinchDistPx > (pixelThresh + 4);
+      const releasedNorm = pinchDistNorm > (normThresh + 0.008);
+      if(releasedPx && releasedNorm){ freeze = false; }
     }
+
+    // Apply movement (respects freeze state)
+    smoothMove(x,y);
 
     updateHUD(isPinched ? 'Pinch' : (open ? 'Open' : 'Closed'));
   }
@@ -113,6 +142,17 @@
   function smoothMove(x,y){
     if(!cursor) return;
     if(prevX==null){ prevX=x; prevY=y; }
+    // If frozen (during pinch), lock to freeze coords
+    if(freeze){
+      prevX = freezeX; prevY = freezeY;
+      cursor.style.left = prevX+'px'; cursor.style.top = prevY+'px';
+      try{
+        const el = document.elementFromPoint(Math.round(prevX), Math.round(prevY));
+        if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
+        if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
+      }catch{}
+      return;
+    }
     let dx = x - prevX, dy = y - prevY;
     if(Math.hypot(dx,dy) < cfg.deadzone){ dx = 0; dy = 0; }
     const stepX = Math.max(Math.min(dx, cfg.maxStep), -cfg.maxStep);
@@ -235,6 +275,8 @@
     try{ if(video){ try{ await video.pause(); } catch{} try{ video.srcObject=null; } catch{} video.remove(); } video=null; } catch{}
     try{ if(lastHoverEl){ lastHoverEl.classList.remove('hf-hover'); lastHoverEl=null; } }catch{}
     prevX=null; prevY=null; sendErrorCount=0;
+    // Reset gesture state
+    pinchDown = false; freeze = false; freezeX = 0; freezeY = 0; lastClick = 0;
     starting=false;
   }
 

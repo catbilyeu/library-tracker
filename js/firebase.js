@@ -55,7 +55,12 @@
         auth.onAuthStateChanged((u)=>{
           user = u || null; dbg('[auth] state', !!user, user && user.uid);
           publish('auth:state', { user });
-          try{ const overlay = document.getElementById('auth-overlay'); if(overlay){ overlay.hidden = !!user; } }catch{}
+          try{
+            const overlay = document.getElementById('auth-overlay');
+            const body = document.body;
+            if(overlay){ overlay.hidden = !!user; }
+            if(body){ body.classList.toggle('signed-out', !user); }
+          }catch{}
           if(readyTimer){ clearTimeout(readyTimer); readyTimer = null; resolve(); }
         });
       });
@@ -72,6 +77,10 @@
     provider.setCustomParameters({ prompt: 'select_account' });
     try{
       dbg('[auth] signInWithPopup start');
+      const overlay = document.getElementById('auth-overlay');
+      if(overlay){
+        overlay.classList.add('signing-in');
+      }
       await auth.signInWithPopup(provider);
       dbg('[auth] signInWithPopup success');
     }catch(e){

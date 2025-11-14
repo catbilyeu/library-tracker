@@ -1,0 +1,69 @@
+:root{
+  --auth-grid-gap: 16px;
+  --auth-panel-width: min(92vw, 860px);
+  --auth-panel-padding: 24px;
+  --auth-wall-opacity: .22; /* default intensity for covers wall in dark */
+}
+
+/* Container overlay */
+.auth-overlay{ position:fixed; inset:0; z-index:2000; display:grid; place-items:center; overflow:hidden; }
+.auth-overlay[hidden]{ display:none; }
+
+/* Background layers */
+.auth-bg{ position:absolute; inset:0; }
+.auth-scrim{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.55)), var(--overlay); backdrop-filter: blur(10px) saturate(120%); }
+
+/* Mosaic of book covers */
+.auth-wall{ position:absolute; inset: -4vh -4vw; filter: saturate(105%) contrast(96%); opacity: var(--auth-wall-opacity); background: #000; }
+.auth-wall::before{
+  content: "";
+  position:absolute; inset:0;
+  background-image:
+    url('https://covers.openlibrary.org/b/id/10521270-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/8231856-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/13148931-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/240727-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/11046184-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/7222246-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/8319250-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/11665298-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/240727-L.jpg'),
+    url('https://covers.openlibrary.org/b/id/10909271-L.jpg');
+  background-size: 20% auto, 20% auto, 20% auto, 20% auto, 20% auto, 20% auto, 20% auto, 20% auto, 20% auto, 20% auto;
+  background-position: 0% 0%, 20% 0%, 40% 0%, 60% 0%, 80% 0%, 10% 50%, 30% 50%, 50% 50%, 70% 50%, 90% 50%;
+  background-repeat: repeat;
+  opacity: .9;
+}
+
+/* Panel */
+.auth-panel{
+  position:relative;
+  z-index:1;
+  width: var(--auth-panel-width);
+  max-width: 860px;
+  background: var(--panel-bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: var(--auth-panel-padding);
+  box-shadow: 0 30px 80px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.05);
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+  gap: calc(var(--auth-grid-gap) + 2px);
+}
+.auth-brand{ font-size:64px; line-height:1; display:grid; place-items:center; width:96px; height:96px; border-radius:16px; background: color-mix(in srgb, var(--card) 85%, transparent); border:1px solid var(--border); }
+#auth-title{ margin: 0; }
+.auth-copy{ margin:6px 0 0 0; color: var(--muted); max-width: 48ch; }
+.auth-actions{ display:flex; gap:10px; justify-content:center; width:100%; }
+
+/* Responsive */
+@media (max-width: 720px){
+  .auth-brand{ margin: 0 auto; }
+}
+
+/* Theme specific tweaks */
+:root[data-theme="light"]{ --auth-wall-opacity: .18; }
+:root[data-theme="earthy"]{ --auth-wall-opacity: .18; }
+:root[data-theme="pastel"]{ --auth-wall-opacity: .16; }

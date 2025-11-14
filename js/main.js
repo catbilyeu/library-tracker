@@ -27,10 +27,13 @@
     document.addEventListener('click', (e)=>{ if(!menu.contains(e.target)) closeMenu(); });
     document.getElementById('btn-import').addEventListener('click', ()=> { closeMenu(); document.getElementById('file-import').click(); });
     document.getElementById('btn-export').addEventListener('click', ()=> { closeMenu(); ImportExport.export(); });
+    const infoHF = document.getElementById('info-handsfree');
+    const infoVoice = document.getElementById('info-voice');
+
     const hfBtn = document.getElementById('toggle-handsfree');
-    hfBtn.addEventListener('click', ()=>{ const now = hfBtn.getAttribute('aria-pressed')!=='true'; hfBtn.setAttribute('aria-pressed', String(now)); publish('handsfree:toggle', { enabled: now }); });
+    hfBtn.addEventListener('click', ()=>{ const now = hfBtn.getAttribute('aria-pressed')!=='true'; hfBtn.setAttribute('aria-pressed', String(now)); publish('handsfree:toggle', { enabled: now }); if(now){ openInfoModal('hf'); }});
     const voiceBtn = document.getElementById('toggle-voice');
-    voiceBtn.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); });
+    voiceBtn.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); if(now){ openInfoModal('voice'); }});
     document.getElementById('btn-settings').addEventListener('click', ()=> { closeMenu(); Settings.open(); });
     // Ensure login button sits between mic and hamburger at runtime (defensive against cached HTML)
     try{
@@ -62,6 +65,25 @@
           sortSel.value = saved;
           window.__sortMode = saved;
         }).catch(()=>{});
+
+  // Show info modal for Hands-Free or Voice
+  function openInfoModal(kind){
+    const id = kind === 'hf' ? 'hf-info-modal' : 'voice-info-modal';
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.add('open');
+    el.setAttribute('aria-hidden','false');
+    const cleanup = ()=>{ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); };
+    const closeBtn = el.querySelector('button.close');
+    closeBtn?.addEventListener('click', cleanup, { once: true });
+    // Close when clicking backdrop
+    el.addEventListener('click', (e)=>{ if(e.target === el) cleanup(); });
+    // Close with Esc
+    el.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ e.preventDefault(); cleanup(); } });
+    // Focus the close button for a11y
+    closeBtn?.focus?.();
+  }
+
       }catch{}
       sortSel.addEventListener('change', async ()=>{
         window.__sortMode = sortSel.value;
@@ -336,13 +358,39 @@
       if(user){
         document.body.classList.remove('signed-out');
         Storage.setBackend(Firebase.CloudStorage);
-        // Apply theme from cloud settings (per-user)
+        // Apply settings from cloud (per-user)
         try{
           const sCloud = await Storage.getSettings();
+          // Theme
           try{
             const t = sCloud.theme || 'dark';
             if(t && t !== 'dark') document.documentElement.setAttribute('data-theme', t);
             else document.documentElement.removeAttribute('data-theme');
+          }catch{}
+          // Hands-Free/Voice runtime state based on cloud prefs
+          try{
+            const hfBtn = document.getElementById('toggle-handsfree');
+            const vBtn = document.getElementById('toggle-voice');
+            if(typeof sCloud.handsFreeEnabled === 'boolean'){
+              if(hfBtn) hfBtn.setAttribute('aria-pressed', String(!!sCloud.handsFreeEnabled));
+              publish('handsfree:toggle', { enabled: !!sCloud.handsFreeEnabled });
+            }
+            if(typeof sCloud.voiceEnabled === 'boolean'){
+              if(vBtn) vBtn.setAttribute('aria-pressed', String(!!sCloud.voiceEnabled));
+              publish('voice:toggle', { enabled: !!sCloud.voiceEnabled });
+            }
+          }catch{}
+          // Sort mode from cloud settings
+          try{
+            const sortSel = document.getElementById('sort-select');
+            if(sCloud.sortMode){
+              window.__sortMode = sCloud.sortMode;
+              if(sortSel) sortSel.value = sCloud.sortMode;
+              // Re-render with the selected sort mode
+              const allBooks = await Storage.getAllBooks();
+              Search.setIndex(allBooks);
+              Shelves.render(allBooks);
+            }
           }catch{}
         }catch{}
         // First-time sign-in: offer to import local books to cloud if cloud is empty
@@ -396,7 +444,13 @@
         Storage.setBackend(window.StorageLocal);
         if(loginBtn){ loginBtn.textContent = 'Sign in'; loginBtn.title = 'Sign in with Google'; }
         // After sign out, show the login overlay so user can sign back in
-        try{ if(overlay){ overlay.hidden = false; overlay.focus?.(); } }catch{}
+        try{
+          if(overlay){
+            overlay.hidden = false;
+            const btn = document.getElementById('btn-auth-google');
+            btn?.focus?.();
+          }
+        }catch{}
       }
     });
 
@@ -499,3 +553,15 @@
     return res;
   };
 })();
+
+  // Info badges (hover/focus tooltips are CSS-only). Ensure keyboard focus shows content
+  try{
+    const infoBtns = [document.getElementById('info-handsfree'), document.getElementById('info-voice')].filter(Boolean);
+    infoBtns.forEach(btn=>{
+      btn.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); const card = btn.querySelector('.info-card'); if(card){ card.style.display = card.style.display==='block' ? '' : 'block'; } }
+        if(e.key==='Escape'){ const card = btn.querySelector('.info-card'); if(card){ card.style.display=''; } }
+      });
+      btn.addEventListener('blur', ()=>{ const card = btn.querySelector('.info-card'); if(card){ card.style.display=''; } }, true);
+    });
+  }catch{}

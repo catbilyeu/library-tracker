@@ -37,3 +37,12 @@
 .history ul.history-list li .row-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .history ul.history-list li .row-actions { display: inline-flex; gap: 6px; }
 .history ul.history-list li .row-actions .mini { font-size: 11px; padding: 4px 8px; }
+
+/* On-enable info modals for Hands-Free and Voice */
+#hf-info-modal, #voice-info-modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:var(--overlay); backdrop-filter: blur(8px) saturate(120%); z-index:1600; }
+#hf-info-modal.open, #voice-info-modal.open{ display:flex; }
+.info-modal-panel{ background:var(--panel-bg); color:var(--fg); border:1px solid var(--border); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.18); width:min(92vw, 720px); max-height:85vh; overflow:auto; padding:16px; position:relative; }
+.info-modal-panel h3{ margin:0 0 8px; }
+.info-modal-panel .close{ position:absolute; right:10px; top:10px; width:40px; height:40px; border-radius:10px; border:1px solid var(--border); background:color-mix(in srgb, var(--card) 70%, transparent); color:var(--muted); cursor:pointer; }
+.info-modal-panel .close:hover{ background:color-mix(in srgb, var(--card) 85%, transparent); color:var(--fg); }
+.info-modal-panel ul{ margin: 8px 0 0 18px; display:grid; gap:6px; }

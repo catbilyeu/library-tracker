@@ -8,6 +8,8 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/auth.css" />
+
   <link rel="stylesheet" href="styles/shelves.css" />
   <link rel="stylesheet" href="styles/modal.css" />
   <link rel="stylesheet" href="styles/handsfree.css" />
@@ -39,7 +41,36 @@
       </div>
       <button id="btn-scan" aria-label="Open scanner">Scan</button>
       <button id="toggle-handsfree" aria-pressed="false" aria-label="Motion cursor" title="Motion cursor">✋</button>
+      <button id="info-handsfree" class="info-badge" aria-label="How motion cursor works" title="Motion cursor help" tabindex="0">i
+        <div class="info-card" role="tooltip" aria-live="polite">
+          <strong>Motion cursor</strong>
+          <ul>
+            <li>Move hand to move the on‑screen cursor</li>
+            <li>Pinch + brief hold = click</li>
+            <li>Hover briefly to highlight buttons</li>
+            <li>Settings → Hands-Free: adjust sensitivity, mirror X, dwell</li>
+          </ul>
+        </div>
+      </button>
+
       <button id="toggle-voice" aria-pressed="false" aria-label="Voice" title="Voice">🎤</button>
+      <button id="info-voice" class="info-badge" aria-label="How voice works" title="Voice help" tabindex="0">i
+        <div class="info-card" role="tooltip" aria-live="polite">
+          <strong>Voice (examples)</strong>
+          <ul>
+            <li>Finding: “Do I have Fourth Wing?”</li>
+            <li>Borrowing: “Lend Fourth Wing to Alex”</li>
+            <li>Borrow with date: “Alex started borrowing Fourth Wing last Tuesday”</li>
+            <li>Removing: “Remove Fourth Wing” (then say “yes”)</li>
+            <li>Borrower list: “Which books is Alex borrowing?”</li>
+            <li>Who’s borrowing: “Who’s borrowing Fourth Wing?”</li>
+            <li>Returns: “Alex returned the books they borrowed on Nov 12th”</li>
+            <li>Pagination: “next page”, “previous page”</li>
+            <li>Closing: “close”, “dismiss”, or “cancel”</li>
+            <li>Clear filters: “clear”</li>
+          </ul>
+        </div>
+      </button>
       <button id="btn-login" aria-label="Sign in" title="Sign in with Google">Sign in</button>
       
       <div class="menu" id="hamburger">
@@ -58,11 +89,16 @@
     <section id="shelves" aria-live="polite"></section>
   </main>
   <!-- Auth Overlay -->
-  <div id="auth-overlay" hidden style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999">
-    <div style="background:var(--panel-bg, #fff);color:var(--text, #222);padding:24px;border-radius:10px;min-width:280px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
-      <h2 style="margin-top:0;margin-bottom:12px">Sign in</h2>
-      <p style="margin:0 0 16px">Sign in with Google to sync your library across devices.</p>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
+  <div id="auth-overlay" hidden class="auth-overlay">
+    <div class="auth-bg" aria-hidden="true">
+      <div id="auth-wall" class="auth-wall" aria-hidden="true"></div>
+      <div class="auth-scrim" aria-hidden="true"></div>
+    </div>
+    <div class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <div class="auth-brand">📚</div>
+      <h2 id="auth-title">Welcome to Library Tracker!</h2>
+      <p class="auth-copy">Sign in with Google to sync your library across devices.</p>
+      <div class="auth-actions">
         <button id="btn-auth-google" type="button" class="accent">Sign in with Google</button>
       </div>
     </div>
@@ -78,6 +114,41 @@
 
   <!-- Settings Panel -->
   <div id="settings-panel" hidden></div>
+
+  <!-- Hands-Free Info Modal -->
+  <div id="hf-info-modal" aria-hidden="true">
+    <div class="info-modal-panel" role="dialog" aria-modal="true" aria-labelledby="hf-info-title">
+      <button class="close" type="button" data-close="hf-info-modal" aria-label="Close">✕</button>
+      <h3 id="hf-info-title">How to use Motion Cursor</h3>
+      <ul>
+        <li>Move your hand to move the on‑screen cursor.</li>
+        <li>Pinch your thumb and index finger, and hold briefly to click.</li>
+        <li>Hover briefly over buttons to highlight them.</li>
+        <li>Open Settings → Hands-Free to adjust sensitivity, mirror X, and dwell time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Voice Info Modal -->
+  <div id="voice-info-modal" aria-hidden="true">
+    <div class="info-modal-panel" role="dialog" aria-modal="true" aria-labelledby="voice-info-title">
+      <button class="close" type="button" data-close="voice-info-modal" aria-label="Close">✕</button>
+      <h3 id="voice-info-title">How to use Voice</h3>
+      <p>Try these examples:</p>
+      <ul>
+        <li>Finding: “Do I have Fourth Wing?” — opens the book or filters results</li>
+        <li>Borrowing: “Lend Fourth Wing to Alex” — records a borrow today</li>
+        <li>Borrowing with date: “Alex started borrowing Fourth Wing last Tuesday”</li>
+        <li>Removing: “Remove Fourth Wing” — then say “yes” to confirm</li>
+        <li>Who’s borrowing: “Who’s borrowing Fourth Wing?”</li>
+        <li>Borrower’s books: “Which books is Alex borrowing?”</li>
+        <li>Returns: “Alex returned the books they borrowed on November 12th”</li>
+        <li>Pagination: “next page”, “previous page”</li>
+        <li>Closing: “close”, “dismiss”, or “cancel”</li>
+        <li>Clear filters: “clear”</li>
+      </ul>
+    </div>
+  </div>
 
   <!-- External libraries -->
   <!-- idb loaded via dynamic import in db.js to avoid MIME/CORS issues -->
