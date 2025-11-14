@@ -51,8 +51,8 @@
     return { s, ease, dwellMs, normThresh, releaseNorm, pixelThresholdPx, releasePx };
   }
   // Defaults
-  let cfg = mapSensitivity(0.6);                 // cursor
-  let pinchCfg = mapPinchSensitivity(0.25);      // pinch default aligned with Settings
+  let cfg = mapSensitivity(0.4);                 // cursor default 40%
+  let pinchCfg = mapPinchSensitivity(0.9);       // pinch default 90%
   let fx = new OneEuro(120, cfg.minCutoff, cfg.beta, 1.0);
   let fy = new OneEuro(120, cfg.minCutoff, cfg.beta, 1.0);
   // Mirror X by default so cursor follows your hand naturally with a front camera
