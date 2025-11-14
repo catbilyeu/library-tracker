@@ -64,6 +64,11 @@
     const headerH = header ? header.getBoundingClientRect().height : 0;
     const styles = window.getComputedStyle(main);
     const padY = getNumberPx(styles.paddingTop) + getNumberPx(styles.paddingBottom);
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 680px)').matches;
+    if(isMobile){
+      const root = el(); if(root){ root.style.height = ''; }
+      return window.innerHeight - headerH - padY;
+    }
     const h = Math.max(0, Math.floor(window.innerHeight - headerH - padY));
     const root = el(); if(root){ root.style.height = h + 'px'; }
     return h;
@@ -71,7 +76,24 @@
 
   function computePageSize(){
     const root = el(); if(!root) return;
-    const gap = 12; // shelves.css grid gap
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 680px)').matches;
+
+    if(isMobile){
+      // Mobile: fix to 3 columns and cap shelves to show ~2 rows (≈6 books)
+      const gap = 6; // mobile gap in shelves.css
+      const colsTry = 3;
+      const w = root.clientWidth || window.innerWidth;
+      // Compute card size based on grid
+      const cardW = (w - (colsTry-1)*gap)/colsTry;
+      const metaH = 28;
+      const cardH = Math.round(cardW * 1.5 + metaH);
+      // Cap shelves container height to two rows so ~6 are visible before scrolling
+      root.style.maxHeight = (cardH * 2 + gap) + 'px';
+      pageSize = 16; // pager step
+      return;
+    }
+
+    const gap = 12; // shelves.css grid gap (desktop)
     const minCardW = 150; // minmax(150px,1fr)
     const w = root.clientWidth; const h = computeAvailableHeight();
     cols = Math.max(1, Math.floor((w + gap) / (minCardW + gap)));

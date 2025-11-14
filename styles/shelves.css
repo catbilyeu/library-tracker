@@ -1,4 +1,12 @@
 #shelves{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+
+/* Smaller cards on mobile to fit 6 visible per screen and 16 per page */
+@media (max-width: 680px){
+  #shelves{ grid-template-columns:repeat(3, 1fr); gap:6px; }
+  .book-card .meta{ padding:4px 6px; min-height:32px; }
+  .book-card .title{ font-size:11px; -webkit-line-clamp:2; }
+  .book-card .authors{ font-size:10px; }
+}
 .book-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;position:relative}
 .book-card img{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--image-bg)}
 .book-card .meta{padding:8px 10px;min-height:56px}
@@ -18,4 +26,12 @@
 /* Decorative series divider aligns better within grid rows on small screens */
 @media (max-width: 520px){
   #shelves .series-divider{ margin:6px 0; }
+}
+
+/* Final mobile override: ensure 3 columns so ~6 books are visible */
+@media (max-width: 680px){
+  #shelves{ grid-template-columns: repeat(3, 1fr) !important; gap:6px !important; }
+  .book-card .meta{ padding:4px 6px; min-height:32px; }
+  .book-card .title{ font-size:11px; -webkit-line-clamp:2; }
+  .book-card .authors{ font-size:10px; }
 }

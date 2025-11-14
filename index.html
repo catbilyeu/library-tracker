@@ -30,6 +30,7 @@
         <option value="author">Author (A–Z)</option>
         <option value="genre">Genre (A–Z)</option>
       </select>
+      <button id="btn-add-mobile" class="icon small" aria-label="Add ISBN (mobile)">＋</button>
       <div class="search-wrap">
         <input id="search-input" type="search" placeholder="Search books…" aria-label="Search books" />
         <button id="btn-clear-search" class="icon small" aria-label="Clear search" title="Clear search" hidden>✕</button>
@@ -79,6 +80,9 @@
           <button id="btn-import" role="menuitem">Import</button>
           <button id="btn-export" role="menuitem">Export</button>
           <button id="btn-settings" role="menuitem">Settings</button>
+          <hr />
+          <button id="menu-hf-toggle" role="menuitemcheckbox" aria-checked="false">Motion cursor</button>
+          <button id="menu-voice-toggle" role="menuitemcheckbox" aria-checked="false">Voice</button>
         </div>
       </div>
       <input id="file-import" type="file" accept="application/json" style="display:none" />

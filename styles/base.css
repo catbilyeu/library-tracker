@@ -1,4 +1,34 @@
 :root{
+/* Header layout overrides */
+/* Desktop defaults restored */
+.app-header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--header-bg);backdrop-filter:blur(6px);z-index:1200}
+.app-header h1{font-size:18px;margin:0}
+.controls{display:flex;gap:8px;align-items:center}
+
+/* Mobile: condense header */
+@media (max-width: 680px){
+  .app-header{ grid-template-columns: 1fr auto; grid-template-areas: 
+    'brand auth' 
+    'search search' 
+    'isbn isbn';
+    align-items:center; gap:8px; padding:8px 10px; }
+  .app-header .brand{ grid-area: brand; }
+  .app-header .auth-btn{ grid-area: auth; }
+  .app-header .controls{ grid-column: 1 / -1; gap:6px; }
+  .app-header .controls .row-search{ grid-area: search; }
+  .app-header .controls .row-isbn{ grid-area: isbn; }
+  .quick-toggles{ display:none; }
+  .app-header h1{ font-size:16px; }
+  .controls input[type=search]{ min-width: 0; width: 100%; }
+  .isbn-inline input{ width: 100%; }
+}
+
+/* Menu additions for toggles */
+.menu .menu-list hr{ border:none; border-top:1px solid var(--border); margin:6px 0; }
+.menu .menu-list button[role=menuitemcheckbox]{ justify-content:space-between; }
+
+
+
   /* Core palette */
   --bg:#0b0f14; --fg:#e6eef8; --muted:#9fb3c8; --accent:#4fa3ff; --card:#121824; --border:#223044; --danger:#ff5d5d; --ok:#1fce72;
   /* UI surfaces */
@@ -93,7 +123,7 @@ button.icon.close:hover{background:color-mix(in srgb, var(--card) 80%, transpare
 @media (max-width:980px){.settings-body{grid-template-columns:1fr;min-width:auto}}
 
 /* Header hamburger menu */
-.app-header .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+@media (min-width: 681px){ .app-header .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; } }
 
 .menu{ position:relative; }
 .menu > button.menu-toggle{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); cursor:pointer; }
@@ -113,6 +143,13 @@ button.icon.close:hover{background:color-mix(in srgb, var(--card) 80%, transpare
 html, body { height: 100%; overflow: hidden; }
 main{ height: calc(100vh - 64px); overflow: hidden; display:block; }
 #shelves{ height: 100%; overflow: hidden; }
+
+/* Restore scrolling on mobile */
+@media (max-width: 680px){
+  html, body { height: auto; overflow: auto; }
+  main { height: auto; overflow: auto; }
+  #shelves { height: auto; overflow: visible; }
+}
 
   /* Maintain fixed header height hint for layout calc */
   .app-header{ min-height:64px; }
@@ -204,3 +241,249 @@ body.signed-out #pager{ display:none !important; }
 .info-badge .info-card strong{ display:block; margin-bottom:6px; color:var(--muted); }
 .info-badge .info-card ul{ margin:0; padding-left:16px; display:grid; gap:4px; }
 .info-badge:hover .info-card, .info-badge:focus .info-card{ display:block; }
+
+/* Mobile header layout: compact and reflowed */
+@media (max-width: 680px){
+  .app-header{ display:grid; grid-template-columns: 1fr auto; grid-template-areas:
+    'brand auth'
+    'search search'
+    'isbn isbn';
+    gap:8px; padding:8px 10px; }
+  .app-header .brand{ grid-area: brand; display:flex; align-items:center; gap:8px; }
+  .app-header .auth-btn{ grid-area: auth; justify-self:end; }
+  .app-header .controls{ grid-column: 1 / -1; display:grid; gap:6px; }
+  .app-header .controls .row-search{ grid-area: search; display:flex; align-items:center; gap:8px; }
+  .app-header .controls .row-isbn{ grid-area: isbn; display:flex; align-items:center; gap:8px; }
+  .quick-toggles{ display:none; }
+  .app-header h1{ font-size:16px; margin:0; }
+  .controls input[type=search]{ min-width: 0; width: 100%; }
+  .isbn-inline input{ width: 100%; }
+}
+
+/* Menu divider + checkbox style entries */
+.menu .menu-list hr{ border:none; border-top:1px solid var(--border); margin:6px 0; }
+.menu .menu-list button[role=menuitemcheckbox]{ justify-content:space-between; }
+
+/* Mobile compact controls sizing */
+@media (max-width: 680px){
+  .app-header .controls{ gap:6px; }
+  button{ min-height: 36px; padding: 8px 10px; }
+  .menu > button.menu-toggle{ width:32px; height:32px; }
+  .auth-btn{ min-height:36px; }
+  #sort-select{ padding:6px 8px; }
+  .search-wrap button.icon.small{ width:24px; height:24px; }
+}
+
+/* Mobile header polish: enforce single-line rows and compact sizing */
+@media (max-width: 680px){
+  .app-header{ padding:6px 8px; gap:6px; min-height:auto; }
+  .app-header h1{ font-size:14px; line-height:1.1; margin:0; }
+  .app-header .controls .row-search{ display:grid; grid-template-columns: 1fr auto; gap:6px; align-items:center; }
+  .app-header .controls .row-isbn{ display:grid; grid-template-columns: 1fr auto; gap:6px; align-items:center; }
+  .search-wrap{ width:100%; }
+  .search-wrap .results-count{ display:none; }
+  .isbn-inline{ display:grid !important; grid-template-columns: 1fr auto; gap:6px; align-items:center; }
+  button{ min-height:32px; padding:6px 8px; border-radius:8px; }
+  .menu > button.menu-toggle{ width:28px; height:28px; }
+  #sort-select{ padding:6px 8px; font-size:12px; }
+}
+
+/* Mobile header: brand row and control row hardening */
+@media (max-width: 680px){
+  /* Brand row: keep title on one line with ellipsis */
+  .app-header .brand{ display:grid; grid-template-columns: 28px 1fr; align-items:center; gap:8px; }
+  .app-header .brand h1{ font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .menu > .menu-toggle{ width:28px; height:28px; }
+
+  /* Search row: two columns, input can shrink */
+  .app-header .controls .row-search{ display:grid; grid-template-columns: 1fr max-content; column-gap:6px; }
+  .search-wrap{ min-width:0; }
+  .search-wrap input[type=search]{ min-width:0; width:100%; }
+  #sort-select{ width:auto; max-width:40vw; font-size:12px; }
+
+  /* ISBN row: two columns, ISBN+Add grouped, Scan on the right */
+  .app-header .controls .row-isbn{ display:grid; grid-template-columns: 1fr max-content; column-gap:6px; }
+  .isbn-inline{ display:grid !important; grid-template-columns: 1fr max-content; column-gap:6px; }
+  .isbn-inline input{ min-width:0; width:100%; }
+  .isbn-inline button{ min-width:unset; padding:6px 10px; }
+  #btn-scan{ padding:6px 10px; }
+}
+
+/* FINAL mobile header enforcement (high-specificity) */
+@media (max-width: 680px){
+  .app-header{ display:grid !important; grid-template-columns: 1fr auto !important; grid-template-areas:
+    'brand auth'
+    'search search'
+    'isbn isbn' !important;
+    gap:6px !important; padding:6px 8px !important; min-height:auto !important; }
+  .app-header .brand{ grid-area: brand !important; display:grid !important; grid-template-columns: 28px 1fr !important; align-items:center !important; gap:8px !important; }
+  .app-header .brand h1{ font-size:14px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; margin:0 !important; }
+  .app-header .auth-btn{ grid-area: auth !important; justify-self:end !important; }
+  .app-header .controls{ grid-column: 1 / -1 !important; display:grid !important; gap:6px !important; }
+  .app-header .controls .row-search{ grid-area: search !important; display:grid !important; grid-template-columns: 1fr max-content !important; column-gap:6px !important; align-items:center !important; }
+  .app-header .controls .row-isbn{ grid-area: isbn !important; display:grid !important; grid-template-columns: 1fr max-content !important; column-gap:6px !important; align-items:center !important; }
+  .quick-toggles, #toggle-handsfree, #toggle-voice, #info-handsfree, #info-voice{ display:none !important; }
+  .search-wrap{ width:100% !important; min-width:0 !important; }
+  .search-wrap input[type=search]{ min-width:0 !important; width:100% !important; }
+  #sort-select{ width:auto !important; max-width:40vw !important; padding:6px 8px !important; font-size:12px !important; }
+  .isbn-inline{ display:grid !important; grid-template-columns: 1fr max-content !important; column-gap:6px !important; align-items:center !important; }
+  .isbn-inline input{ min-width:0 !important; width:100% !important; }
+  .isbn-inline button, #btn-scan{ min-width:unset !important; padding:6px 10px !important; }
+}
+
+/* Mobile-only top bar compaction without touching desktop */
+@media (max-width: 680px){
+  /* Condense header height and gaps */
+  .app-header{ padding:6px 8px; gap:6px; }
+  .app-header h1{ font-size:14px; margin:0; }
+
+  /* Put Search + Sort on one row */
+  .app-header .controls{ display:grid; grid-template-columns: 1fr auto; grid-auto-rows:min-content; gap:6px; align-items:center; }
+  .app-header .controls .search-wrap{ grid-column: 1 / 2; min-width:0; }
+  .app-header .controls #sort-select{ grid-column: 2 / 3; width:auto; max-width:40vw; padding:6px 8px; }
+
+  /* Replace full Add button with compact + icon on mobile */
+  #btn-add{ display:none; }
+  #btn-add-mobile{ display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:28px; padding:0 8px; border-radius:8px; }
+
+  /* Put ISBN+Add(+) + Scan on one row below */
+  .app-header .controls .isbn-inline{ grid-column: 1 / 2; display:grid !important; grid-template-columns: 1fr auto; gap:6px; }
+  #btn-scan{ grid-column: 2 / 3; padding:6px 8px; height:32px; }
+
+  /* Hide info badges to save space; toggles can be accessed via hamburger */
+  #info-handsfree, #info-voice{ display:none; }
+
+  /* Smaller elements */
+  button{ min-height:32px; padding:6px 8px; }
+  .search-wrap .icon.small{ width:24px; height:24px; }
+}
+
+/* Mobile header: final condensed layout without touching desktop */
+@media (max-width: 680px){
+  .app-header{ position:sticky; top:0; padding:6px 8px; }
+  /* Small hamburger top-left */
+  .menu#hamburger{ position:absolute; left:8px; top:6px; }
+  .menu#hamburger > .menu-toggle{ width:28px; height:28px; }
+  /* Small sign out top-right */
+  #btn-login{ position:absolute; right:8px; top:6px; min-height:28px; padding:4px 8px; font-size:12px; }
+  /* Title centered and single-line */
+  .app-header h1{ font-size:14px; margin:0 48px; line-height:1.1; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Compact two-row controls */
+  .app-header .controls{ display:grid; grid-template-columns: 1fr auto; grid-auto-rows:min-content; gap:6px; align-items:center; margin-top:4px; }
+  /* Row 1: Search (flex) + Sort (auto) */
+  .app-header .controls .row-search{ display:grid; grid-template-columns: 1fr auto; gap:6px; align-items:center; grid-column: 1 / -1; }
+  .app-header .controls .row-search .search-wrap{ min-width:0; }
+  .app-header .controls .row-search #sort-select{ width:auto; max-width:40vw; padding:6px 8px; }
+  /* Row 2: ISBN+Add (flex) + Scan (auto) */
+  .app-header .controls .row-isbn{ display:grid; grid-template-columns: 1fr auto; gap:6px; align-items:center; grid-column: 1 / -1; }
+  .app-header .controls .row-isbn .isbn-inline{ display:grid !important; grid-template-columns: 1fr auto; gap:6px; }
+  #btn-scan{ padding:6px 8px; min-height:32px; }
+
+  /* Keep full Add button; hide experimental mobile + icon */
+  #btn-add{ display:inline-flex !important; min-height:32px; padding:6px 10px; }
+  #btn-add-mobile{ display:none !important; }
+
+  /* Hide verbose badges and quick toggles on mobile to save space */
+  #info-handsfree, #info-voice, #toggle-handsfree, #toggle-voice{ display:none !important; }
+}
+
+/* Mobile tweak: align Sort with Search and enlarge title */
+@media (max-width: 680px){
+  /* Bigger title on mobile per request */
+  .app-header h1{ font-size:18px !important; }
+  /* Ensure search input and sort are the same height and vertically centered */
+  .app-header .controls .row-search{ align-items:center !important; }
+  .app-header .controls .row-search input[type=search]{ height:36px; padding:6px 10px; }
+  .app-header .controls .row-search #sort-select{
+    height:36px; padding:0 10px; vertical-align:middle; margin-top:2px; /* slight nudge to match baseline */
+  }
+}
+
+/* Mobile fine-tune: nudge title and filter further down */
+@media (max-width: 680px){
+  .app-header h1{ margin-top: 6px !important; }
+  .app-header .controls .row-search #sort-select{ margin-top: 6px !important; transform: translateY(2px); }
+}
+
+/* Mobile: make Sort match Search height and drop slightly */
+@media (max-width: 680px){
+  .app-header .controls .row-search{ align-items:center !important; }
+  .app-header .controls .row-search input[type=search]{ height:40px !important; padding:8px 10px !important; box-sizing:border-box; }
+  .app-header .controls .row-search #sort-select{
+    height:40px !important; line-height:40px !important; padding:0 12px !important; box-sizing:border-box;
+    margin-top:0 !important; align-self:center !important; transform: translateY(4px);
+  }
+}
+
+/* Mobile: drop Sort even further per request */
+@media (max-width: 680px){
+  .app-header .controls .row-search #sort-select{
+    margin-top: 12px !important;
+    transform: translateY(10px) !important;
+  }
+}
+
+/* Mobile: force grid placement and align Search + Sort on same row (direct selector) */
+@media (max-width: 680px){
+  .app-header .controls{ display:grid; grid-template-columns: 1fr auto; grid-auto-flow: row; grid-auto-rows:min-content; gap:6px; align-items:center; }
+  .app-header .controls .search-wrap{ grid-column:1; grid-row:1; min-width:0; }
+  .app-header .controls #sort-select{
+    grid-column:2; grid-row:1;
+    height:40px !important; line-height:40px !important; padding:0 12px !important;
+    margin-top: 0 !important; transform: none !important;
+    align-self:center !important;
+  }
+  .app-header .controls .isbn-inline{ grid-column:1; grid-row:2; display:grid !important; grid-template-columns: 1fr auto; gap:6px; }
+  .app-header .controls #btn-scan{ grid-column:2; grid-row:2; }
+}
+
+/* Mobile: adjust Sort drop and reduce Search width to avoid overlap */
+@media (max-width: 680px){
+  /* Reduce over-drop and align with search */
+  .app-header .controls .row-search #sort-select{
+    height:36px !important;
+    margin-top: 6px !important;
+    transform: none !important;
+    align-self: center !important;
+    padding: 0 10px !important;
+  }
+  /* Keep search slightly narrower so rows don't collide */
+  .app-header .controls .row-search .search-wrap{ min-width:0 !important; }
+  .app-header .controls .row-search .search-wrap input[type=search]{
+    height:36px !important;
+    max-width: 65vw !important;
+  }
+  /* Add a bit more row gap so Sort never clips into ISBN/Scan row */
+  .app-header .controls{ row-gap: 10px !important; }
+}
+
+/* Mobile: lower Search input to match vertical rhythm */
+@media (max-width: 680px){
+  .app-header .controls .row-search .search-wrap input[type=search]{
+    margin-top: 12px !important;
+  }
+}
+
+/* Mobile: hard-align Search and Sort on the same baseline (final override) */
+@media (max-width: 680px){
+  .app-header .controls .row-search{ display:grid !important; grid-template-columns: 1fr auto !important; align-items:center !important; column-gap:6px !important; }
+  .app-header .controls .row-search #search-input{
+    height:40px !important; margin-top:0 !important; padding:8px 10px !important; box-sizing:border-box !important;
+  }
+  .app-header .controls .row-search #sort-select{
+    height:40px !important; margin-top:0 !important; transform:none !important; padding:0 12px !important; box-sizing:border-box !important; align-self:center !important;
+  }
+}
+
+/* Mobile: make hamburger dropdown open to the right of the button (not to the left) */
+@media (max-width: 680px){
+  .menu#hamburger > .menu-list{
+    left: 0 !important;
+    right: auto !important;
+    max-width: 80vw;
+  }
+}
+
+/* Hide experimental mobile "+" add button by default (desktop and mobile) */
+#btn-add-mobile{ display:none !important; }

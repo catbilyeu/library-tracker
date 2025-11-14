@@ -21,27 +21,42 @@
     const menu = document.getElementById('hamburger');
     const toggle = menu.querySelector('.menu-toggle');
     const list = menu.querySelector('.menu-list');
+    const menuHf = document.getElementById('menu-hf-toggle');
+    const menuVoice = document.getElementById('menu-voice-toggle');
+    const hfBtn = document.getElementById('toggle-handsfree');
+    const voiceBtn = document.getElementById('toggle-voice');
     const openMenu = ()=>{ menu.classList.add('open'); toggle.setAttribute('aria-expanded','true'); };
     const closeMenu = ()=>{ menu.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
     toggle.addEventListener('click', (e)=>{ e.stopPropagation(); if(menu.classList.contains('open')) closeMenu(); else openMenu(); });
     document.addEventListener('click', (e)=>{ if(!menu.contains(e.target)) closeMenu(); });
     document.getElementById('btn-import').addEventListener('click', ()=> { closeMenu(); document.getElementById('file-import').click(); });
     document.getElementById('btn-export').addEventListener('click', ()=> { closeMenu(); ImportExport.export(); });
-    const infoHF = document.getElementById('info-handsfree');
-    const infoVoice = document.getElementById('info-voice');
-
-    const hfBtn = document.getElementById('toggle-handsfree');
-    hfBtn.addEventListener('click', ()=>{ const now = hfBtn.getAttribute('aria-pressed')!=='true'; hfBtn.setAttribute('aria-pressed', String(now)); publish('handsfree:toggle', { enabled: now }); if(now){ openInfoModal('hf'); }});
-    const voiceBtn = document.getElementById('toggle-voice');
-    voiceBtn.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); if(now){ openInfoModal('voice'); }});
     document.getElementById('btn-settings').addEventListener('click', ()=> { closeMenu(); Settings.open(); });
-    // Ensure login button sits between mic and hamburger at runtime (defensive against cached HTML)
-    try{
-      const controls = document.querySelector('.app-header .controls');
-      const loginBtn = document.getElementById('btn-login');
-      const hamburger = document.getElementById('hamburger');
-      if(controls && loginBtn && hamburger){ controls.insertBefore(loginBtn, hamburger); }
-    }catch{}
+    // Mirror toggle state between header buttons and menu items
+    const syncMenuChecks = ()=>{
+      if(menuHf && hfBtn){ menuHf.setAttribute('aria-checked', String(hfBtn.getAttribute('aria-pressed')==='true')); }
+      if(menuVoice && voiceBtn){ menuVoice.setAttribute('aria-checked', String(voiceBtn.getAttribute('aria-pressed')==='true')); }
+    };
+    syncMenuChecks();
+    menuHf?.addEventListener('click', ()=>{
+      const now = !(hfBtn?.getAttribute('aria-pressed')==='true');
+      hfBtn?.setAttribute('aria-pressed', String(now));
+      publish('handsfree:toggle', { enabled: now });
+      syncMenuChecks();
+      if(now){ openInfoModal('hf'); }
+      closeMenu();
+    });
+    menuVoice?.addEventListener('click', ()=>{
+      const now = !(voiceBtn?.getAttribute('aria-pressed')==='true');
+      voiceBtn?.setAttribute('aria-pressed', String(now));
+      publish('voice:toggle', { enabled: now });
+      syncMenuChecks();
+      if(now){ openInfoModal('voice'); }
+      closeMenu();
+    });
+    // Header quick toggles still work (desktop), keep them in sync
+    hfBtn?.addEventListener('click', ()=>{ const now = hfBtn.getAttribute('aria-pressed')!=='true'; hfBtn.setAttribute('aria-pressed', String(now)); publish('handsfree:toggle', { enabled: now }); syncMenuChecks(); if(now){ openInfoModal('hf'); }});
+    voiceBtn?.addEventListener('click', ()=>{ const now = voiceBtn.getAttribute('aria-pressed')!=='true'; voiceBtn.setAttribute('aria-pressed', String(now)); publish('voice:toggle', { enabled: now }); syncMenuChecks(); if(now){ openInfoModal('voice'); }});
     // Auth button
     const loginBtn = document.getElementById('btn-login');
     if(loginBtn){ loginBtn.addEventListener('click', async ()=>{

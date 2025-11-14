@@ -1,4 +1,4 @@
-.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s ease;background:var(--overlay);backdrop-filter:blur(10px) saturate(120%);z-index:1000}
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s ease;background:var(--overlay);backdrop-filter:blur(10px) saturate(120%);z-index:2000}
 .modal.open{opacity:1;pointer-events:auto}
 .modal.closing{opacity:0;pointer-events:none}
 .modal .panel{position:relative;background:var(--panel-bg);border:1px solid var(--border);border-radius:16px;max-width:780px;width:min(92vw,780px);max-height:90vh;overflow:auto;padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);transform:translateY(12px) scale(.98);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .24s ease,box-shadow .24s}
@@ -46,3 +46,72 @@
 .info-modal-panel .close{ position:absolute; right:10px; top:10px; width:40px; height:40px; border-radius:10px; border:1px solid var(--border); background:color-mix(in srgb, var(--card) 70%, transparent); color:var(--muted); cursor:pointer; }
 .info-modal-panel .close:hover{ background:color-mix(in srgb, var(--card) 85%, transparent); color:var(--fg); }
 .info-modal-panel ul{ margin: 8px 0 0 18px; display:grid; gap:6px; }
+
+/* Mobile modal: fit fully within viewport, respect safe areas */
+@media (max-width: 680px){
+  .modal{ align-items: flex-start; }
+  .modal .panel{
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    padding: 12px;
+    border-radius: 12px;
+    max-height: none;
+    margin: calc(8px + env(safe-area-inset-top)) auto calc(8px + env(safe-area-inset-bottom));
+  }
+  .modal .body{ grid-template-columns: 1fr; gap: 12px; }
+  .modal .cover{ width: 100%; max-width: 100%; }
+  .modal .close{ width:36px; height:36px; border-radius:10px; font-size:20px; top:6px; right:6px; }
+}
+
+/* Ensure modal content scrolls inside panel on mobile while header stays visible */
+@media (max-width: 680px){
+  .modal .panel{ display: grid; grid-template-rows: auto 1fr; }
+  .modal .header{ position: sticky; top: 0; z-index: 1; background: transparent; backdrop-filter: none; margin-bottom: 8px; }
+  .modal .body{ overflow: auto; }
+}
+
+/* Compact modal variant on mobile: single-column, smaller typography, tighter spacing */
+@media (max-width: 680px){
+  .modal .title-wrap .title{ font-size: 16px; line-height: 1.2; margin: 0; }
+  .modal .subtitle{ font-size: 12px; }
+  .modal .actions{ gap: 12px; }
+  .modal .actions button{ min-height: 32px; padding: 6px 8px; font-size: 13px; }
+  .history h3{ font-size: 14px; margin: 8px 0; }
+  .history ul.history-list{ gap: 6px; }
+  .history ul.history-list li{ padding: 6px 8px; }
+}
+
+/* Mobile: wrap modal content in tabs (Summary / History) — only shows History on demand */
+@media (max-width: 680px){
+  .modal .body{ display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .modal .body .history{ display: none; }
+  .modal .body.show-history .history{ display: block; }
+}
+
+/* Mobile history toggle button placement */
+@media (max-width: 680px){
+  #btn-history{ margin-left: auto; }
+}
+
+/* Mobile: compact action buttons to two per row if space is tight */
+@media (max-width: 680px){
+  .modal .actions{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .modal .actions button{ width: 100%; }
+}
+
+/* Mobile: tighten history row text sizes to reduce vertical space */
+@media (max-width: 680px){
+  .history ul.history-list li{ grid-template-columns: 1fr auto; }
+  .history ul.history-list li .row-line{ font-size: 12px; }
+  .history ul.history-list li .row-actions .mini{ font-size: 10px; padding: 2px 6px; }
+}
+
+/* Mobile: ensure cover image isn’t too tall */
+@media (max-width: 680px){
+  .modal .cover{ max-height: 38vh; object-fit: contain; }
+}
+
+/* Mobile: hide history by default until user taps History; keep panel below full viewport height */
+@media (max-width: 680px){
+  .modal .panel{ max-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}

@@ -47,14 +47,19 @@
              '<button type="button" class="mini edit" aria-label="Edit entry">Edit</button>'+
              '<button type="button" class="mini danger remove" aria-label="Remove entry">Remove</button></span></li>';
     }).join('')||'<li>None</li>';
+
     const actionsHtml = `
       <div class="actions">
         <button id="btn-reenrich">Re-enrich metadata</button>
         <button id="btn-edit-series-2">Edit series</button>
         ${!isLent?'<button id="btn-lend" class="accent">Lend book</button>':'<button id="btn-return" class="accent">Mark returned '+(last? '('+lastBorrowerSafe+')' : '')+'</button>'}
+        <button id="btn-history">History</button>
         <button id="btn-remove" class="danger">Remove</button>
       </div>`;
-    return '<div class="body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" alt="Cover" /><div>'+actionsHtml+'<div class="history"><h3>Borrow history</h3><ul class="history-list">'+items+'</ul></div></div></div>';
+
+    const historySummary = `<div class="history" id="history-block"><h3>Borrow history</h3><ul class="history-list">${items}</ul></div>`;
+
+    return '<div class="body" id="modal-body"><img class="cover" src="'+cover+'" data-isbn="'+b.isbn13+'" alt="Cover" /><div>'+actionsHtml+historySummary+'</div></div>';
   }
 
   function getFocusable(container){
@@ -84,6 +89,22 @@
 
     const panel = r.querySelector('.panel');
     panel.setAttribute('tabindex','-1');
+
+    // Mobile-only: history toggle
+    try{
+      const historyBtn = r.querySelector('#btn-history');
+      const body = r.querySelector('#modal-body');
+      const historyBlock = r.querySelector('#history-block');
+      if(historyBtn && body && historyBlock){
+        historyBtn.addEventListener('click', ()=>{
+          body.classList.toggle('show-history');
+          // Scroll to history if revealing
+          if(body.classList.contains('show-history')){
+            historyBlock.scrollIntoView({ behavior:'smooth', block:'start' });
+          }
+        });
+      }
+    }catch{}
 
     r.querySelector('.close').addEventListener('click', close);
     r.addEventListener('click',(e)=>{ if(e.target===r) close(); });

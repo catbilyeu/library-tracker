@@ -139,6 +139,51 @@
     updateHUD(isPinched ? 'Pinch' : (open ? 'Open' : 'Closed'));
   }
 
+  function maybeAutoScroll(px, py){
+    // Only enable edge scroll on mobile where scrolling is enabled
+    const mobile = window.matchMedia && window.matchMedia('(max-width: 680px)').matches;
+    if(!mobile) return;
+    const threshold = 56; // px from edges
+    const y = py;
+    const atTop = y <= threshold;
+    const atBottom = y >= (window.innerHeight - threshold);
+    if(!atTop && !atBottom) return;
+
+    // Determine scroll target: nearest scrollable ancestor under cursor, else page
+    let target = null;
+    try{
+      target = document.elementFromPoint(Math.round(px), Math.round(py));
+    }catch{}
+    let node = target;
+    const isScrollable = (el)=>{
+      if(!el || el===document.body || el===document.documentElement) return false;
+      const st = getComputedStyle(el);
+      if(!/(auto|scroll)/.test(st.overflowY||'')) return false;
+      return (el.scrollHeight - el.clientHeight) > 1;
+    };
+    let scrollEl = null;
+    for(let i=0;i<8 && node;i++){
+      if(isScrollable(node)){ scrollEl = node; break; }
+      node = node.parentElement;
+    }
+    const scrollBy = (dy)=>{
+      if(scrollEl){ scrollEl.scrollBy({ top: dy, behavior: 'auto' }); }
+      else { window.scrollBy({ top: dy, behavior: 'auto' }); }
+    };
+
+    const base = 1.2; // min px per frame
+    const max = 4.5;  // max px per frame
+    if(atTop){
+      const t = clamp(1 - (y/threshold), 0, 1);
+      const delta = -(base + (max-base)*t);
+      scrollBy(delta);
+    } else if(atBottom){
+      const t = clamp((y - (window.innerHeight - threshold))/threshold, 0, 1);
+      const delta = (base + (max-base)*t);
+      scrollBy(delta);
+    }
+  }
+
   function smoothMove(x,y){
     if(!cursor) return;
     if(prevX==null){ prevX=x; prevY=y; }
@@ -151,6 +196,8 @@
         if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
         if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
       }catch{}
+      // Allow auto-scroll even while frozen (e.g., while holding near edge)
+      try{ maybeAutoScroll(prevX, prevY); }catch{}
       return;
     }
     let dx = x - prevX, dy = y - prevY;
@@ -165,6 +212,8 @@
       if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
       if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
     }catch{}
+    // Edge auto-scroll on mobile
+    try{ maybeAutoScroll(prevX, prevY); }catch{}
   }
 
   function setupOverlay(){
