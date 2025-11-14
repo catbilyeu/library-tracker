@@ -209,11 +209,30 @@
         if(actualIdx<0 || actualIdx>=raw.length) return;
         const entry = raw[actualIdx];
         if(btn.classList.contains('remove')){
-          // remove the entry
-          raw.splice(actualIdx,1);
-          current.borrowHistory = raw;
-          await window.Storage.putBook(current);
-          open({ isbn13: current.isbn13 });
+          // Confirm before removing the entry (voice/motion-friendly)
+          const overlay=document.createElement('div'); overlay.className='inline-overlay overlay-pending-history-remove'; overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true');
+          const dialog=document.createElement('div'); dialog.className='dialog';
+          const h3=document.createElement('h3'); h3.id='history-remove-title'; h3.textContent='Remove history entry';
+          const p=document.createElement('p'); p.textContent='Are you sure you want to remove this borrow/return entry?';
+          const actions=document.createElement('div'); actions.className='actions';
+          const cancelBtn=document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='Cancel';
+          const confirmBtn=document.createElement('button'); confirmBtn.type='button'; confirmBtn.className='danger'; confirmBtn.textContent='Remove';
+          actions.appendChild(cancelBtn); actions.appendChild(confirmBtn);
+          dialog.appendChild(h3); dialog.appendChild(p); dialog.appendChild(actions);
+          overlay.appendChild(dialog); r.appendChild(overlay);
+          confirmBtn.focus();
+          const cleanup=()=> overlay.remove();
+          overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
+          cancelBtn.onclick = cleanup;
+          confirmBtn.onclick = async ()=>{
+            raw.splice(actualIdx,1);
+            current.borrowHistory = raw;
+            await window.Storage.putBook(current);
+            cleanup();
+            open({ isbn13: current.isbn13 });
+          };
+          // Enable voice confirmation: set pending context
+          window.__voicePendingConfirm = { action:'removeHistoryEntry', payload:{ isbn13: current.isbn13, idx: actualIdx } };
           return;
         }
         if(btn.classList.contains('edit')){

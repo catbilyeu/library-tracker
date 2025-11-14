@@ -198,9 +198,10 @@
     m = s.match(/^(hands\s*free|handsfree|continuous)\s*(on|off)/i);
     if(m){ return { type:'handsfree:toggle', payload:{ enabled: m[2].toLowerCase()==='on' } } }
 
-    // voice on/off
-    m = s.match(/^voice\s*(on|off)/i);
+    // voice on/off and info
+    m = s.match(/^voice\s*(on|off)$/i);
     if(m){ return { type:'voice:toggle', payload:{ enabled: m[1].toLowerCase()==='on' } } }
+    if(/^voice\s+info$/i.test(s)) return { type:'voice:info', payload:{} };
 
     return null;
   }

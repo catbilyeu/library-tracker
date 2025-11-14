@@ -129,11 +129,47 @@
       el.classList?.add('hf-hover');
       setTimeout(()=> el.classList?.remove('hf-hover'), 500);
     }
+    // Attempt to focus a useful editable target before click, to help inputs pick up focus
+    try{
+      let target = document.elementFromPoint(x, y);
+      target = target || el;
+      // If it's a label pointing to an input, focus the input first
+      let candidate = target;
+      const isLabel = candidate && candidate.tagName && candidate.tagName.toLowerCase()==='label';
+      if(isLabel){
+        const forId = candidate.getAttribute('for');
+        const linked = forId ? document.getElementById(forId) : null;
+        if(linked){ linked.focus?.(); }
+      }
+      // If not label or label had no target, find nearest editable inside or above
+      if(!document.activeElement || document.activeElement===document.body){
+        // Upward search for focusable
+        let node = candidate;
+        const isEditable = (el)=> el && ((el.isContentEditable) || (el.tagName && ['input','textarea','select'].includes(el.tagName.toLowerCase())));
+        let focusEl = null;
+        for(let i=0;i<3 && node;i++){
+          if(isEditable(node)){ focusEl = node; break; }
+          node = node.parentElement;
+        }
+        // Downward search if still not found
+        if(!focusEl && candidate && candidate.querySelector){
+          focusEl = candidate.querySelector('input,textarea,[contenteditable="true"],select');
+        }
+        if(focusEl){ focusEl.focus?.(); }
+      }
+    }catch{}
+
     Utils.synthesizeClick(x, y);
     // After the synthetic click settles, if the focused element is editable, start voice dictation
     setTimeout(()=>{
       try{
-        const ae = document.activeElement;
+        let ae = document.activeElement;
+        // If the element under point was a label, try focusing its linked input again post-click
+        if(ae && ae.tagName && ae.tagName.toLowerCase()==='label'){
+          const forId = ae.getAttribute('for');
+          const linked = forId ? document.getElementById(forId) : null;
+          if(linked){ linked.focus?.(); ae = linked; }
+        }
         // If date input, open native picker if supported
         if(ae && ae.tagName && ae.tagName.toLowerCase()==='input' && (ae.type||'').toLowerCase()==='date'){
           try{ ae.showPicker && ae.showPicker(); }catch{}
@@ -364,18 +400,30 @@
           }
           Utils.toast(`Returned ${count} book${count===1?'':'s'} for ${borrower}`, { type:'ok' });
         }
-        // Only handle removeBook for now
         if(pending.action==='removeBook'){
           const overlay = document.querySelector('.overlay-pending-remove');
           if(overlay){ overlay.remove(); }
           await Storage.deleteBook(pending.payload.isbn13);
         }
+        if(pending.action==='removeHistoryEntry'){
+          try{
+            const book = await Storage.getBook(pending.payload.isbn13);
+            const idx = pending.payload.idx;
+            if(book && Array.isArray(book.borrowHistory) && idx>=0 && idx<book.borrowHistory.length){
+              book.borrowHistory.splice(idx,1);
+              await Storage.putBook(book);
+              const ovr = document.querySelector('.overlay-pending-history-remove'); if(ovr) ovr.remove();
+              publish('modal:open', { isbn13: pending.payload.isbn13 });
+            }
+          }catch{}
+        }
         window.__voicePendingConfirm = null;
         break; }
       case 'handsfree:toggle':
         publish('handsfree:toggle', { enabled: !!payload.enabled }); break;
-      case 'voice:toggle':
-        publish('voice:toggle', { enabled: !!payload.enabled }); break;
+      case 'voice:info': {
+        try{ const openInfoModal = window.App && window.App.openInfoModal ? window.App.openInfoModal : null; if(openInfoModal){ openInfoModal('voice'); } else { const el = document.getElementById('voice-info-modal'); if(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); } } }catch{}
+        break; }
     }
   }
 
