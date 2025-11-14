@@ -1,5 +1,5 @@
 #handsfree-overlay{position:fixed;inset:0;pointer-events:none;z-index:5000}
-.hf-cursor{width:18px;height:18px;border:2px solid var(--accent);border-radius:50%;position:absolute;transform:translate(-50%,-50%);box-shadow:0 0 0 2px rgba(79,163,255,.18)}
+.hf-cursor{width:18px;height:18px;border:2px solid var(--accent);border-radius:50%;position:absolute;transform:translate(-50%,-50%);will-change:transform;box-shadow:0 0 0 2px rgba(79,163,255,.18)}
 /* Subtle hover outline applied only to interactive elements under motion cursor */
 button.hf-hover, a.hf-hover, .book-card.hf-hover, [role="button"].hf-hover, .pager .pager-btn.hf-hover, .menu button.hf-hover, .modal .close.hf-hover, .settings-panel button.hf-hover { outline:1px solid rgba(79,163,255,.55); outline-offset:1px }
 

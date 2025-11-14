@@ -14,14 +14,22 @@
   let sendErrorCount=0;
 
   function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-  // Cursor movement sensitivity (position smoothing, step caps, debounce)
+  // Time-aware smoothing filter (One Euro)
+  class LowPass { constructor(alpha, init=null){ this.a=alpha; this.s=init; } apply(x,a){ if(a!==undefined) this.a=a; this.s=(this.s==null)?x:(this.s+this.a*(x-this.s)); return this.s; } }
+  class OneEuro {
+    constructor(freq=120, minCutoff=1.2, beta=0.008, dCutoff=1.0){ this.freq=freq; this.minCutoff=minCutoff; this.beta=beta; this.dCutoff=dCutoff; this.x=new LowPass(this._alpha(minCutoff)); this.dx=new LowPass(this._alpha(dCutoff)); this.lastT=null; }
+    _alpha(cutoff){ const te=1/this.freq; const tau=1/(2*Math.PI*cutoff); return 1/(1+tau/te); }
+    filter(x, tSec){ if(this.lastT!=null){ const dt=Math.max(1e-3, (tSec-this.lastT)); this.freq=1/dt; } this.lastT=tSec; const prev=(this.x.s ?? x); const dx=this.dx.apply(x-prev); const cutoff=this.minCutoff + this.beta*Math.abs(dx); return this.x.apply(x, this._alpha(cutoff)); }
+  }
+  // Cursor movement sensitivity mapped to One Euro params + debounce
   function mapSensitivity(s){
     s = clamp(Number(s)||0, 0, 1);
-    const deadzone = Math.round(18 - s*12);      // px (18 -> 6)
-    const alpha = 0.22 + s*(0.23);               // smoothing factor (0.22 -> 0.45)
-    const debounceMs = Math.round(220 + (1-s)*80);  // ms (300 -> 220)
-    const maxStep = Math.round(36 + s*28);       // px/frame cap (36 -> 64)
-    return { s, deadzone, alpha, debounceMs, maxStep };
+    const minCutoff = 0.7 + s*1.3;       // 0.7 → 2.0 Hz (higher = snappier)
+    const beta      = 0.003 + s*0.015;   // 0.003 → 0.018 (more velocity adapt)
+    const deadzone  = Math.round(8 - s*4);      // px (8 → 4) small noise clamp
+    const spikeCap  = Math.round(140 + s*60);   // px/frame rare spike limiter
+    const debounceMs = Math.round(220 + (1-s)*80);  // ms (300 → 220)
+    return { s, minCutoff, beta, deadzone, spikeCap, debounceMs };
   }
   // Pinch sensitivity (click/grab gesture)
   function mapPinchSensitivity(s){
@@ -44,7 +52,9 @@
   }
   // Defaults
   let cfg = mapSensitivity(0.6);                 // cursor
-  let pinchCfg = mapPinchSensitivity(0.6);        // pinch (separate, default more sensitive)
+  let pinchCfg = mapPinchSensitivity(0.25);      // pinch default aligned with Settings
+  let fx = new OneEuro(120, cfg.minCutoff, cfg.beta, 1.0);
+  let fy = new OneEuro(120, cfg.minCutoff, cfg.beta, 1.0);
   // Mirror X by default so cursor follows your hand naturally with a front camera
   let mirrorX = true;
 
@@ -80,7 +90,7 @@
     try{
       const cx = Math.round(window.innerWidth/2), cy = Math.round(window.innerHeight/2);
       prevX = cx; prevY = cy;
-      if(cursor){ cursor.style.left = cx+'px'; cursor.style.top = cy+'px'; }
+      if(cursor){ cursor.style.transform = `translate(${cx}px, ${cy}px) translate(-50%,-50%)`; }
     }catch{}
   }
 
@@ -130,7 +140,7 @@
         pinchDown = true; pinchStart = now; pinchFired = false;
         freeze = true; freezeX = x; freezeY = y;
         // move cursor to pinch point immediately for precise click target
-        prevX = x; prevY = y; if(cursor){ cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
+        prevX = x; prevY = y; if(cursor){ cursor.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)`; }
       }
       // If sustained beyond dwell and not within debounce, fire once per pinch
       if(!pinchFired && (now - pinchStart) >= pinchCfg.dwellMs && (now - lastClick) > cfg.debounceMs){
@@ -148,8 +158,21 @@
       if(releasedPx && releasedNorm){ freeze = false; }
     }
 
-    // Apply movement (respects freeze state)
-    smoothMove(x,y);
+    // Filtered position with time-aware smoothing
+    const tSec = performance.now()/1000;
+    let sx = x, sy = y;
+    if(!freeze){
+      sx = fx.filter(x, tSec);
+      sy = fy.filter(y, tSec);
+      if(prevX!=null && Math.hypot(sx-prevX, sy-prevY) < cfg.deadzone){ sx = prevX; sy = prevY; }
+      if(prevX!=null){
+        const ddx = clamp(sx - prevX, -cfg.spikeCap, cfg.spikeCap);
+        const ddy = clamp(sy - prevY, -cfg.spikeCap, cfg.spikeCap);
+        sx = prevX + ddx; sy = prevY + ddy;
+      }
+    }
+    // Apply movement (respects freeze state inside smoothMove)
+    smoothMove(sx, sy);
 
     updateHUD(isPinched ? 'Pinch' : (open ? 'Open' : 'Closed'));
   }
@@ -199,33 +222,38 @@
     }
   }
 
+  let lastHoverTs = 0;
   function smoothMove(x,y){
     if(!cursor) return;
     if(prevX==null){ prevX=x; prevY=y; }
     // If frozen (during pinch), lock to freeze coords
     if(freeze){
       prevX = freezeX; prevY = freezeY;
-      cursor.style.left = prevX+'px'; cursor.style.top = prevY+'px';
+      cursor.style.transform = `translate(${prevX}px, ${prevY}px) translate(-50%,-50%)`;
       try{
-        const el = document.elementFromPoint(Math.round(prevX), Math.round(prevY));
-        if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
-        if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
+        const nowTs = performance.now();
+        if(nowTs - lastHoverTs > 33){
+          lastHoverTs = nowTs;
+          const el = document.elementFromPoint(Math.round(prevX), Math.round(prevY));
+          if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
+          if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
+        }
       }catch{}
       // Allow auto-scroll even while frozen (e.g., while holding near edge)
       try{ maybeAutoScroll(prevX, prevY); }catch{}
       return;
     }
-    let dx = x - prevX, dy = y - prevY;
-    if(Math.hypot(dx,dy) < cfg.deadzone){ dx = 0; dy = 0; }
-    const stepX = Math.max(Math.min(dx, cfg.maxStep), -cfg.maxStep);
-    const stepY = Math.max(Math.min(dy, cfg.maxStep), -cfg.maxStep);
-    prevX = prevX + stepX * cfg.alpha; prevY = prevY + stepY * cfg.alpha;
-    cursor.style.left = prevX+'px'; cursor.style.top = prevY+'px';
+    prevX = x; prevY = y;
+    cursor.style.transform = `translate(${prevX}px, ${prevY}px) translate(-50%,-50%)`;
     // Motion hover affordance to make targets more obvious
     try{
-      const el = document.elementFromPoint(Math.round(prevX), Math.round(prevY));
-      if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
-      if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
+      const nowTs = performance.now();
+      if(nowTs - lastHoverTs > 33){
+        lastHoverTs = nowTs;
+        const el = document.elementFromPoint(Math.round(prevX), Math.round(prevY));
+        if(lastHoverEl && lastHoverEl!==el){ lastHoverEl.classList.remove('hf-hover'); }
+        if(el){ el.classList.add('hf-hover'); lastHoverEl = el; }
+      }
     }catch{}
     // Edge auto-scroll on mobile
     try{ maybeAutoScroll(prevX, prevY); }catch{}
@@ -285,24 +313,41 @@
       }
     }
 
-    const onFrame = async ()=>{
+    let sending = false;
+    const rafPump = ()=>{
       try{
-        if(!video || video.readyState < 2){ rafId = requestAnimationFrame(onFrame); return; }
-        const vw = video.videoWidth||0, vh = video.videoHeight||0;
-        if(vw<=0 || vh<=0){ rafId = requestAnimationFrame(onFrame); return; }
-        await hands.send({ image: video });
-        sendErrorCount = 0;
-      } catch(e){
-        sendErrorCount++;
-        const msg = String(e && (e.message||e));
-        if(msg.includes('ROI width') || msg.includes('Aborted') || sendErrorCount>=5){
-          console.warn('[motion-cursor] onFrame error, restarting', msg);
-          await hardRestart(); return;
+        if(video && video.readyState >= 2 && !sending){
+          sending = true;
+          hands.send({ image: video }).then(()=>{ sendErrorCount = 0; }).catch(e=>{
+            sendErrorCount++;
+            const msg = String(e && (e.message||e));
+            if(msg.includes('ROI width') || msg.includes('Aborted') || sendErrorCount>=5){
+              console.warn('[motion-cursor] onFrame error, restarting', msg);
+              hardRestart(); return;
+            }
+          }).finally(()=>{ sending=false; });
         }
-      }
-      rafId = requestAnimationFrame(onFrame);
+      }catch{}
+      rafId = requestAnimationFrame(rafPump);
     };
-    rafId = requestAnimationFrame(onFrame);
+    if(typeof video.requestVideoFrameCallback === 'function'){
+      const vfc = ()=>{
+        try{
+          if(!sending){ sending=true; hands.send({ image: video }).catch(e=>{
+            sendErrorCount++;
+            const msg = String(e && (e.message||e));
+            if(msg.includes('ROI width') || msg.includes('Aborted') || sendErrorCount>=5){
+              console.warn('[motion-cursor] onFrame error, restarting', msg);
+              hardRestart(); return;
+            }
+          }).finally(()=>{ sending=false; }); }
+        }catch{}
+        video.requestVideoFrameCallback(vfc);
+      };
+      video.requestVideoFrameCallback(vfc);
+    } else {
+      rafId = requestAnimationFrame(rafPump);
+    }
 
     Utils.toast('Hands-free is on');
     starting=false;
@@ -364,7 +409,7 @@
     else { stop(); }
   }
 
-  function setSensitivity(v){ cfg = mapSensitivity(v); try{ Storage?.setSettings?.({ handsFreeSensitivity: cfg.s }); } catch{} }
+  function setSensitivity(v){ cfg = mapSensitivity(v); fx = new OneEuro(120, cfg.minCutoff, cfg.beta, 1.0); fy = new OneEuro(120, cfg.minCutoff, cfg.beta, 1.0); try{ Storage?.setSettings?.({ handsFreeSensitivity: cfg.s }); } catch{} }
   function setPinchSensitivity(v){ pinchCfg = mapPinchSensitivity(v); try{ Storage?.setSettings?.({ handsFreePinchSensitivity: pinchCfg.s }); } catch{} }
   function setMirrorX(v){ mirrorX = !!v; try{ Storage?.setSettings?.({ handsFreeMirrorX: mirrorX }); } catch{} }
   function setDeviceId(id){ deviceId = id || null; try{ Storage?.setSettings?.({ handsFreeDeviceId: deviceId }); } catch{} if(isEnabled){ stop().then(start); } }

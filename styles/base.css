@@ -105,12 +105,12 @@ button.danger:hover{background:linear-gradient(180deg, color-mix(in srgb, var(--
 #settings-panel{position:fixed;inset:0;z-index:1500}
 #settings-panel[hidden]{display:none}
 .settings-overlay{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(10px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:12px}
-.settings-panel{background:var(--panel-bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);width:min(96vw,960px);max-width:960px;/* no internal scroll */overflow:visible;padding:18px}
+.settings-panel{background:var(--panel-bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);width:min(94vw,1035px);max-width:1035px;max-height:96vh;/* no internal scroll */overflow:hidden;padding:18px}
 
 .settings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:8px}
 .settings-header h2{margin:0;font-size:18px}
 .settings-header .muted{color:var(--muted);font-size:13px}
-.settings-body{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:12px}
+.settings-body{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:12px;overflow:auto;max-height:calc(96vh - 120px)}
 .settings-section{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;background:color-mix(in srgb, var(--card) 80%, transparent)}
 .settings-section h3{margin:0 0 8px 0;font-size:14px;color:var(--muted)}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}
@@ -123,6 +123,9 @@ button.danger:hover{background:linear-gradient(180deg, color-mix(in srgb, var(--
 
 .range-wrap{display:flex;align-items:center;gap:10px;width:100%}
 .settings-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+/* Bottom-right fixed inside the modal */
+.settings-panel{ position: relative; padding-bottom: 56px; }
+.settings-actions{ position: absolute; right: 14px; bottom: 10px; margin-top: 0; background: transparent; padding-top: 0; }
 button.icon.close{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:color-mix(in srgb, var(--card) 60%, transparent);color:var(--muted)}
 button.icon.close:hover{background:color-mix(in srgb, var(--card) 80%, transparent);color:var(--fg)}
 @media (max-width:980px){.settings-body{grid-template-columns:1fr}}
