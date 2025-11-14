@@ -44,7 +44,7 @@
   }
   // Defaults
   let cfg = mapSensitivity(0.6);                 // cursor
-  let pinchCfg = mapPinchSensitivity(0.25);      // pinch (separate)
+  let pinchCfg = mapPinchSensitivity(0.6);        // pinch (separate, default more sensitive)
   // Mirror X by default so cursor follows your hand naturally with a front camera
   let mirrorX = true;
 
