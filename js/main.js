@@ -428,7 +428,7 @@
           confirmBtn.focus();
           const cleanup=()=> overlay.remove();
           overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
-          cancelBtn.onclick = cleanup;
+          cancelBtn.onclick = ()=>{ cleanup(); try{ window.__voicePendingConfirm = null; }catch{} };
           confirmBtn.onclick = async ()=>{
             await Storage.deleteBook(book.isbn13);
             try{ publish('book:removed', { isbn13: book.isbn13 }); }catch{}
