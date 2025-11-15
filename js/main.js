@@ -231,6 +231,12 @@
         try{ Settings.close?.(); }catch{}
         // Close book modal if open
         try{ Modal.close?.(); }catch{}
+        // Close scanner if open
+        try{ window.Scanner?.close?.(); }catch{}
+        try{
+          const so = document.getElementById('scanner-overlay');
+          if(so){ so.hidden = true; so.innerHTML = ''; }
+        }catch{}
         // Close info modals (Hands-Free and Voice)
         try{
           ['hf-info-modal','voice-info-modal'].forEach(id=>{
