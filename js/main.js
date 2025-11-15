@@ -423,9 +423,8 @@
           actions.appendChild(cancelBtn); actions.appendChild(confirmBtn);
           dialog.appendChild(h3); dialog.appendChild(msg); dialog.appendChild(actions);
           overlay.appendChild(dialog);
-          // Append overlay inside the book modal root so it's layered above
-          const modalRoot = document.getElementById('book-modal');
-          if(modalRoot){ modalRoot.appendChild(overlay); } else { document.body.appendChild(overlay); }
+          // Append overlay to body so it persists across modal re-renders and layers above
+          document.body.appendChild(overlay);
           confirmBtn.focus();
           const cleanup=()=> overlay.remove();
           overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
