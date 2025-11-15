@@ -224,9 +224,11 @@
       case 'modal:close': {
         // Close inline overlays (including those injected by Modal or remove flow)
         const overlays = Array.from(document.querySelectorAll('.inline-overlay'));
-        if(overlays.length){ overlays.forEach(o=>o.remove()); }
+        // Only close inline overlays if we are not in the middle of a pending voice confirmation
+        const pending = window.__voicePendingConfirm;
+        if(overlays.length && (!pending || (pending.action!=='removeBook' && pending.action!=='bulkReturn' && pending.action!=='removeHistoryEntry'))){ overlays.forEach(o=>o.remove()); }
         // Also clear any pending voice confirm
-        try{ window.__voicePendingConfirm = null; }catch{}
+        try{ if(!pending || (pending.action!=='removeBook' && pending.action!=='bulkReturn' && pending.action!=='removeHistoryEntry')) window.__voicePendingConfirm = null; }catch{}
         // Close settings if open
         try{ Settings.close?.(); }catch{}
         // Close book modal if open
