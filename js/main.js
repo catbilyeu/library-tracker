@@ -452,6 +452,8 @@
           const overlay = document.querySelector('.overlay-pending-remove');
           if(overlay){ overlay.remove(); }
           await Storage.deleteBook(pending.payload.isbn13);
+          try{ publish('book:removed', { isbn13: pending.payload.isbn13 }); }catch{}
+          try{ window.Modal?.close?.(); }catch{}
         }
         if(pending.action==='removeHistoryEntry'){
           try{
