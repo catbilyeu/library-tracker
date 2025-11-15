@@ -428,7 +428,12 @@
           const cleanup=()=> overlay.remove();
           overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
           cancelBtn.onclick = cleanup;
-          confirmBtn.onclick = async ()=>{ await Storage.deleteBook(book.isbn13); cleanup(); };
+          confirmBtn.onclick = async ()=>{
+            await Storage.deleteBook(book.isbn13);
+            try{ publish('book:removed', { isbn13: book.isbn13 }); }catch{}
+            cleanup();
+            try{ window.Modal?.close?.(); }catch{}
+          };
           // Store context on window for voice confirmation
           window.__voicePendingConfirm = { action:'removeBook', payload:{ isbn13: book.isbn13 } };
         };
