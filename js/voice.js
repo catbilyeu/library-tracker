@@ -117,11 +117,12 @@
     if(m) return { type:'book:is_borrowed', payload:{ target: m[3] } };
 
     // "[name] started borrowing [book] (on|for|last|next|this) <datePhrase>" => lend intent with date
-    m = s.match(/^(.+?)\s+started\s+borrow(ing)?\s+(.+?)(?:\s+(?:on|for|last|next|this)\s+(.+))?$/i);
+    m = s.match(/^(.+?)\s+started\s+borrow(ing)?\s+(.+?)(?:\s+(on|for|last|next|this)\s+(.+))?$/i);
     if(m){
       const borrower=(m[1]||'').trim(); const target=(m[3]||'').trim();
-      const datePhrase=(m[4]||'').trim();
-      let borrowedAt = null; if(datePhrase){ borrowedAt = Utils.parseDatePhrase(datePhrase); }
+      const kw=(m[4]||'').trim(); const rest=(m[5]||'').trim();
+      const phrase = kw ? ((kw==='on'||kw==='for') ? rest : `${kw} ${rest}`) : '';
+      let borrowedAt = null; if(phrase){ borrowedAt = Utils.parseDatePhrase(phrase); }
       return { type:'lend', payload:{ target, borrower, borrowedAt } };
     }
 
