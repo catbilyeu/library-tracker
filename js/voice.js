@@ -211,8 +211,13 @@
     m = s.match(/^(remove|delete|del)\s+(.+)/i);
     if(m) return { type:'remove', payload:{ target: m[2] } };
 
-    // hands-free/continuous toggle
+    // hands-free/continuous toggle and motion cursor synonyms
     m = s.match(/^(hands\s*free|handsfree|continuous)\s*(on|off)/i);
+    if(m){ return { type:'handsfree:toggle', payload:{ enabled: m[2].toLowerCase()==='on' } } }
+    // "motion cursor" synonyms
+    if(/^(enable|turn\s*on)\s+(motion\s*cursor|motion|cursor)$/i.test(s)) return { type:'handsfree:toggle', payload:{ enabled: true } };
+    if(/^(disable|turn\s*off)\s+(motion\s*cursor|motion|cursor)$/i.test(s)) return { type:'handsfree:toggle', payload:{ enabled: false } };
+    m = s.match(/^(motion\s*cursor|motion|cursor)\s*(on|off)$/i);
     if(m){ return { type:'handsfree:toggle', payload:{ enabled: m[2].toLowerCase()==='on' } } }
 
     // voice on/off and info
