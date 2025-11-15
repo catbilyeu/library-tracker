@@ -333,7 +333,7 @@
         confirmBtn.focus();
         const cleanup=()=> overlay.remove();
         overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
-        cancelBtn.onclick = cleanup;
+        cancelBtn.onclick = ()=>{ cleanup(); try{ window.Modal?.close?.(); }catch{} };
         confirmBtn.onclick = async ()=>{
           let count=0; const allBooks = await Storage.getAllBooks();
           for(const b of allBooks){
@@ -341,6 +341,7 @@
             if(open){ open.returnedAt = Date.now(); await Storage.putBook(b); count++; }
           }
           cleanup();
+          try{ window.Modal?.close?.(); }catch{}
           Utils.toast(`Returned ${count} book${count===1?'':'s'} for ${borrower}`, { type:'ok' });
         };
         // Store context for voice confirmation

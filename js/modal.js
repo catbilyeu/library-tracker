@@ -8,6 +8,8 @@
     if(keydownHandler){ r.removeEventListener('keydown',keydownHandler,true); keydownHandler=null; }
     // Stop any active voice dictation session when the modal is closed
     try{ publish('voice:dictation:stop', {}); }catch{}
+    // Ensure no re-open on book:updated after close by clearing current immediately
+    current = null;
     r.classList.remove('open'); r.classList.add('closing');
     const toRestore = previouslyFocused; previouslyFocused = null;
     setTimeout(()=>{
@@ -15,7 +17,6 @@
       r.setAttribute('aria-hidden','true');
       r.innerHTML='';
       publish('modal:close',{});
-      current=null;
       try{ toRestore&&toRestore.focus&&toRestore.focus(); }catch{}
     }, 220);
   }

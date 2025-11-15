@@ -189,6 +189,13 @@
       return { type:'lend', payload:{ target, borrower, borrowedAt } };
     }
 
+    // return all books for a borrower (must come BEFORE generic return patterns)
+    m = s.match(/^return\s+books\s+for\s+(.+)/i);
+    if(m){
+      const borrower=(m[1]||'').trim();
+      return { type:'borrower:return_all', payload:{ borrower } };
+    }
+
     // return [book] for [name]
     m = s.match(/^return\s+(.+?)\s+for\s+(.+)/i);
     if(m){
@@ -200,13 +207,6 @@
     if(m){
       const target=(m[1]||'').trim();
       return { type:'return', payload:{ target } };
-    }
-
-    // return all books for a borrower
-    m = s.match(/^return\s+books\s+for\s+(.+)/i);
-    if(m){
-      const borrower=(m[1]||'').trim();
-      return { type:'borrower:return_all', payload:{ borrower } };
     }
     m = s.match(/^(remove|delete|del)\s+(.+)/i);
     if(m) return { type:'remove', payload:{ target: m[2] } };
