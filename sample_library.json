@@ -1,0 +1,1085 @@
+{
+  "version": 1,
+  "exportedAt": 1763170345366,
+  "books": {
+    "9780007289349": {
+      "id": "9780007289349",
+      "subjects": [
+        "fiction"
+      ],
+      "authors": [
+        "Alistair MacLean"
+      ],
+      "isbn13": "9780007289349",
+      "borrowHistory": [],
+      "coverUrl": "https://books.google.com/books/content?id=e1ZZHkzMb6sC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "isbn10": "0007289340",
+      "addedAt": 1762643834163,
+      "title": "The Guns of Navarone"
+    },
+    "9780060530846": {
+      "borrowHistory": [
+        {
+          "borrower": "Alice",
+          "borrowedAt": 1762841005440,
+          "returnedAt": 1762842142874
+        },
+        {
+          "borrowedAt": 1763096400000,
+          "borrower": "Anna"
+        }
+      ],
+      "isbn13": "9780060530846",
+      "title": "The Magician's Nephew Color Gift Edition",
+      "coverUrl": "https://books.google.com/books/content?id=klGC6xroFOwC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "volumeNumber": null,
+      "series": [
+        "The Chronicles of Narnia",
+        "The Chronicles of Narnia ;",
+        "bk. 1"
+      ],
+      "isbn10": "0060530847",
+      "normalizedSeries": "chronicles of narnia",
+      "addedAt": 1762643835286,
+      "id": "9780060530846",
+      "authors": [
+        "C. S. Lewis"
+      ],
+      "subjects": [
+        "fantasy"
+      ]
+    },
+    "9780140444551": {
+      "isbn13": "9780140444551",
+      "authors": [
+        "Fyodor Dostoyevsky"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=kYKMEAAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "borrowHistory": [
+        {
+          "borrower": "Feyre",
+          "borrowedAt": 1762318800000
+        }
+      ],
+      "id": "9780140444551",
+      "title": "Netochka Nezvanova",
+      "subjects": [
+        "fiction"
+      ],
+      "series": [
+        "Penguin classics"
+      ],
+      "normalizedSeries": "penguin classics",
+      "isbn10": "0140444556",
+      "addedAt": 1762643832829
+    },
+    "9780141305479": {
+      "isbn13": "9780141305479",
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9780141305479",
+      "isbn10": "0141305479",
+      "authors": [
+        "Emily Brontë"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=RCULqqhTtpkC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "title": "Wuthering Heights",
+      "addedAt": 1762643834879,
+      "borrowHistory": [
+        {
+          "borrowedAt": 1762750800000,
+          "borrower": "jason",
+          "returnedAt": 1762747076153
+        },
+        {
+          "borrowedAt": 1762923600000,
+          "borrower": "peter",
+          "returnedAt": 1763060839243
+        }
+      ]
+    },
+    "9780345384201": {
+      "addedAt": 1762643833238,
+      "subjects": [
+        "fiction"
+      ],
+      "borrowHistory": [
+        {
+          "borrower": "Sarah",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=6uPBhEIKP7kC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "id": "9780345384201",
+      "authors": [
+        "Maryse Condé"
+      ],
+      "title": "I, Tituba, Black Witch of Salem",
+      "isbn13": "9780345384201",
+      "isbn10": "0345384202"
+    },
+    "9780399221392": {
+      "borrowHistory": [
+        {
+          "borrower": "sam",
+          "borrowedAt": 1762752623199
+        }
+      ],
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9780399221392",
+      "coverUrl": "https://covers.openlibrary.org/b/isbn/9780399221392-M.jpg",
+      "isbn13": "9780399221392",
+      "title": "The Log of Christopher Columbus",
+      "isbn10": "0399221395",
+      "authors": [
+        "Christopher Columbus",
+        "Steve Lowe"
+      ],
+      "addedAt": 1762643834879
+    },
+    "9780439139601": {
+      "authors": [
+        "J. K. Rowling"
+      ],
+      "volumeNumber": 4,
+      "normalizedSeries": "harry potter",
+      "id": "9780439139601",
+      "series": [
+        "Harry Potter"
+      ],
+      "isbn13": "9780439139601",
+      "coverUrl": "https://books.google.com/books/content?id=48sc0QEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "addedAt": 1762826028215,
+      "borrowHistory": [
+        {
+          "borrower": "Theo",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "isbn10": "0439139600",
+      "subjects": [],
+      "title": "Harry Potter and the Goblet of Fire"
+    },
+    "9780439785969": {
+      "isbn10": "0439785960",
+      "coverUrl": "https://covers.openlibrary.org/b/isbn/9780439785969-M.jpg",
+      "addedAt": 1762826215080,
+      "id": "9780439785969",
+      "authors": [
+        "J. K. Rowling",
+        "Mary GrandPré"
+      ],
+      "subjects": [],
+      "normalizedSeries": "harry potter",
+      "volumeNumber": 6,
+      "isbn13": "9780439785969",
+      "series": [
+        "Harry Potter",
+        "Harry Potter, #6"
+      ],
+      "title": "Harry Potter and the Half-Blood Prince",
+      "borrowHistory": [
+        {
+          "borrowedAt": 1763096400000,
+          "borrower": "Adam"
+        }
+      ]
+    },
+    "9780440498056": {
+      "isbn13": "9780440498056",
+      "subjects": [
+        "fantasy"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=VYI3bNt2ssEC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "authors": [
+        "Madeleine L'Engle"
+      ],
+      "borrowHistory": [
+        {
+          "borrowedAt": 1762664400000,
+          "returnedAt": 1762837200000,
+          "borrower": "hannah"
+        },
+        {
+          "borrower": "Jason",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "id": "9780440498056",
+      "title": "A Wrinkle in Time",
+      "isbn10": "0440498058",
+      "addedAt": 1762643835286
+    },
+    "9780525520382": {
+      "title": "There There",
+      "authors": [
+        "Tommy Orange"
+      ],
+      "subjects": [
+        "fiction"
+      ],
+      "isbn13": "9780525520382",
+      "isbn10": "0525520384",
+      "coverUrl": "https://books.google.com/books/content?id=oNY0DwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "addedAt": 1762643832829,
+      "id": "9780525520382",
+      "borrowHistory": []
+    },
+    "9780544133419": {
+      "id": "9780544133419",
+      "coverUrl": "https://books.google.com/books/content?id=aLPqDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "borrowHistory": [
+        {
+          "borrowedAt": 1762747125286,
+          "borrower": "jason"
+        }
+      ],
+      "title": "Difficult Loves",
+      "isbn13": "9780544133419",
+      "authors": [
+        "Italo Calvino"
+      ],
+      "addedAt": 1762643833238,
+      "isbn10": "0544133412",
+      "subjects": [
+        "fiction"
+      ]
+    },
+    "9780545139700": {
+      "series": [
+        "Harry Potter"
+      ],
+      "title": "Harry Potter and the Deathly Hallows",
+      "coverUrl": "https://covers.openlibrary.org/b/isbn/9780545139700-M.jpg",
+      "normalizedSeries": "harry potter",
+      "id": "9780545139700",
+      "volumeNumber": 7,
+      "isbn10": "0545139708",
+      "addedAt": 1762826248608,
+      "subjects": [],
+      "isbn13": "9780545139700",
+      "authors": [
+        "J. K. Rowling"
+      ],
+      "borrowHistory": [
+        {
+          "borrower": "sam",
+          "borrowedAt": 1762405200000
+        }
+      ]
+    },
+    "9780553211665": {
+      "coverUrl": "https://books.google.com/books/content?id=X_dvDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "subjects": [
+        "fiction"
+      ],
+      "isbn10": "0553211668",
+      "volumeNumber": null,
+      "id": "9780553211665",
+      "normalizedSeries": "",
+      "series": [
+        "bantam classics"
+      ],
+      "isbn13": "9780553211665",
+      "borrowHistory": [],
+      "addedAt": 1762643832829,
+      "title": "Candide",
+      "authors": [
+        "Voltaire"
+      ]
+    },
+    "9780553902549": {
+      "isbn13": "9780553902549",
+      "authors": [
+        "Jules Verne"
+      ],
+      "subjects": [
+        "fiction"
+      ],
+      "addedAt": 1762643832829,
+      "id": "9780553902549",
+      "coverUrl": "https://books.google.com/books/content?id=icKmd-tlvPMC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "title": "Journey to the Center of the Earth",
+      "borrowHistory": [
+        {
+          "borrower": "peter",
+          "borrowedAt": 1762840182437
+        }
+      ],
+      "isbn10": "0553902547"
+    },
+    "9780671543204": {
+      "coverUrl": "https://books.google.com/books/content?id=I93XAAAAMAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "id": "9780671543204",
+      "isbn10": "0671543202",
+      "borrowHistory": [
+        {
+          "borrower": "and i",
+          "borrowedAt": 1762752635683,
+          "returnedAt": 1762799454379
+        }
+      ],
+      "authors": [
+        "Agatha Christie"
+      ],
+      "subjects": [
+        "fiction"
+      ],
+      "title": "Remembered Death",
+      "isbn13": "9780671543204",
+      "addedAt": 1762643834163
+    },
+    "9780679720218": {
+      "authors": [
+        "Albert Camus"
+      ],
+      "isbn10": "0679720219",
+      "subjects": [
+        "fiction"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=7_Blv5sqceoC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "borrowHistory": [
+        {
+          "returnedAt": 1763104635008,
+          "borrower": "John",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "title": "The Plague",
+      "addedAt": 1762643832829,
+      "id": "9780679720218",
+      "isbn13": "9780679720218",
+      "normalizedSeries": "vintage international",
+      "series": [
+        "Vintage international"
+      ]
+    },
+    "9780747532699": {
+      "authors": [
+        "J. K. Rowling",
+        "J.K. Rowling"
+      ],
+      "subjects": [],
+      "isbn13": "9780747532699",
+      "isbn10": "0747532699",
+      "title": "Harry Potter and the Philosopher's Stone",
+      "normalizedSeries": "harry potter",
+      "borrowHistory": [
+        {
+          "borrower": "Anna",
+          "returnedAt": 1763105748777,
+          "borrowedAt": 1763096400000
+        },
+        {
+          "borrowedAt": 1763096400000,
+          "returnedAt": 1763136717638,
+          "borrower": "Peter"
+        },
+        {
+          "borrower": "Sam",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "series": [
+        "Harry Potter",
+        "Harry Potter, #1"
+      ],
+      "volumeNumber": 1,
+      "addedAt": 1762825882725,
+      "coverUrl": "https://books.google.com/books/content?id=pTtOGwAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "id": "9780747532699"
+    },
+    "9780747538493": {
+      "addedAt": 1762825905270,
+      "coverUrl": "https://books.google.com/books/content?id=5iTebBW-w7QC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "title": "Harry Potter and the Chamber of Secrets",
+      "isbn13": "9780747538493",
+      "borrowHistory": [
+        {
+          "borrower": "Alex",
+          "borrowedAt": 1762923600000,
+          "returnedAt": 1763009409037
+        },
+        {
+          "returnedAt": 1763009406708,
+          "borrower": "Alex",
+          "borrowedAt": 1762837200000
+        },
+        {
+          "returnedAt": 1763169312579,
+          "borrower": "Peter",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "series": [
+        "Harry Potter",
+        "Harry Potter, #2"
+      ],
+      "subjects": [
+        "Wizards -- Juvenile fiction",
+        "Magic -- Juvenile fiction",
+        "Schools -- Juvenile fiction",
+        "Potter, Harry (Fictitious character) -- Fiction",
+        "Wizards -- Fiction",
+        "Magic -- Fiction",
+        "Schools -- Fiction",
+        "England -- Juvenile fiction",
+        "England -- Fiction"
+      ],
+      "authors": [
+        "J.K. Rowling"
+      ],
+      "isbn10": "0747538492",
+      "normalizedSeries": "harry potter",
+      "id": "9780747538493",
+      "volumeNumber": 2
+    },
+    "9780747542155": {
+      "coverUrl": "https://books.google.com/books/content?id=Sm5AKLXKxHgC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "isbn10": "0747542155",
+      "subjects": [],
+      "volumeNumber": 3,
+      "id": "9780747542155",
+      "normalizedSeries": "harry potter",
+      "series": [
+        "Harry Potter",
+        "Harry Potter, Book 3"
+      ],
+      "isbn13": "9780747542155",
+      "borrowHistory": [
+        {
+          "borrower": "Peter",
+          "borrowedAt": 1762491600000,
+          "returnedAt": 1763047221997
+        },
+        {
+          "borrower": "Alice",
+          "returnedAt": 1763047280991,
+          "borrowedAt": 1763047229192
+        },
+        {
+          "borrower": "dave",
+          "borrowedAt": 1763096400000,
+          "returnedAt": 1763100006695
+        },
+        {
+          "borrowedAt": 1763355600000,
+          "borrower": "mark"
+        }
+      ],
+      "addedAt": 1762825925958,
+      "title": "Harry Potter and the Prisoner of Azkaban",
+      "authors": [
+        "J.K. Rowling"
+      ]
+    },
+    "9780747551003": {
+      "isbn13": "9780747551003",
+      "normalizedSeries": "harry potter",
+      "subjects": [],
+      "isbn10": "0747551006",
+      "addedAt": 1762826134189,
+      "borrowHistory": [
+        {
+          "borrowedAt": 1762146000000,
+          "borrower": "Evette"
+        }
+      ],
+      "id": "9780747551003",
+      "coverUrl": "https://covers.openlibrary.org/b/isbn/9780747551003-M.jpg",
+      "title": "Harry Potter and the Order of the Phoenix",
+      "series": [
+        "Harry Potter",
+        "Harry Potter, Book 5"
+      ],
+      "authors": [
+        "J. K. Rowling"
+      ],
+      "volumeNumber": 5
+    },
+    "9780809594610": {
+      "isbn10": "0809594617",
+      "isbn13": "9780809594610",
+      "title": "Robinson Crusoe",
+      "id": "9780809594610",
+      "authors": [
+        "Daniel Defoe"
+      ],
+      "addedAt": 1762643834163,
+      "subjects": [
+        "fiction"
+      ],
+      "borrowHistory": [],
+      "coverUrl": "https://books.google.com/books/content?id=lIFkPgAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+    },
+    "9781250343161": {
+      "isbn10": "125034316X",
+      "isbn13": "9781250343161",
+      "authors": [
+        "Carissa Broadbent"
+      ],
+      "addedAt": 1763169845597,
+      "id": "9781250343161",
+      "subjects": [],
+      "volumeNumber": 2,
+      "coverUrl": "https://books.google.com/books/content?id=yhbxEAAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "borrowHistory": [],
+      "title": "Ashes and the Star-Cursed King",
+      "normalizedSeries": "nightborne duet",
+      "series": [
+        "The Nightborne Duet"
+      ]
+    },
+    "9781250343185": {
+      "isbn10": "1250343186",
+      "authors": [
+        "Carissa Broadbent"
+      ],
+      "borrowHistory": [],
+      "normalizedSeries": "nightborne duet",
+      "title": "Serpent and the Wings of Night",
+      "volumeNumber": 1,
+      "coverUrl": "https://books.google.com/books/content?id=E4rXEAAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "addedAt": 1763169839562,
+      "id": "9781250343185",
+      "subjects": [
+        "Fiction, fantasy, romance",
+        "Fiction, romance, paranormal, vampires",
+        "Fiction, fantasy, paranormal"
+      ],
+      "isbn13": "9781250343185",
+      "series": [
+        "The Nightborne Duet"
+      ]
+    },
+    "9781328879943": {
+      "isbn13": "9781328879943",
+      "addedAt": 1762643833663,
+      "coverUrl": "https://books.google.com/books/content?id=5OSUnQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "isbn10": "1328879941",
+      "authors": [
+        "Margaret Atwood"
+      ],
+      "borrowHistory": [],
+      "title": "The Handmaid's Tale",
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9781328879943"
+    },
+    "9781340698416": {
+      "title": "The Ingenious Gentleman Don Quixote of La Mancha, Volume 2",
+      "addedAt": 1762643833238,
+      "authors": [
+        "John Ormsby"
+      ],
+      "isbn13": "9781340698416",
+      "coverUrl": "https://books.google.com/books/content?id=SHDXjwEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "volumeNumber": 2,
+      "borrowHistory": [],
+      "isbn10": "1340698412",
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9781340698416"
+    },
+    "9781420931594": {
+      "title": "The Sorrows of Young Werther",
+      "id": "9781420931594",
+      "addedAt": 1762643833663,
+      "isbn10": "1420931598",
+      "subjects": [
+        "fiction"
+      ],
+      "borrowHistory": [],
+      "authors": [
+        "Johann Wolfgang von Goethe"
+      ],
+      "isbn13": "9781420931594",
+      "coverUrl": "https://books.google.com/books/content?id=49qqmAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+    },
+    "9781439117132": {
+      "isbn10": "1439117136",
+      "title": "Pudd'nhead Wilson",
+      "id": "9781439117132",
+      "addedAt": 1762643832829,
+      "borrowHistory": [],
+      "authors": [
+        "Mark Twain"
+      ],
+      "isbn13": "9781439117132",
+      "coverUrl": "https://books.google.com/books/content?id=B9qLCgAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "subjects": [
+        "fiction"
+      ]
+    },
+    "9781501141218": {
+      "authors": [
+        "Stephen King"
+      ],
+      "addedAt": 1762643834163,
+      "isbn10": "150114121X",
+      "coverUrl": "https://books.google.com/books/content?id=29O752DKn1cC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "isbn13": "9781501141218",
+      "title": "Four Past Midnight",
+      "borrowHistory": [
+        {
+          "borrower": "jason",
+          "borrowedAt": 1762491600000
+        }
+      ],
+      "id": "9781501141218",
+      "subjects": [
+        "fiction"
+      ]
+    },
+    "9781540801388": {
+      "isbn13": "9781540801388",
+      "isbn10": "1540801381",
+      "id": "9781540801388",
+      "addedAt": 1762643833663,
+      "title": "Frankenstein",
+      "subjects": [
+        "fiction"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=pXw8MQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "authors": [
+        "Mary Wollstonecraft Shelley"
+      ],
+      "borrowHistory": []
+    },
+    "9781605976969": {
+      "title": "The Queen of Spades",
+      "coverUrl": "https://books.google.com/books/content?id=rgrQNwAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "borrowHistory": [],
+      "subjects": [
+        "fiction"
+      ],
+      "isbn13": "9781605976969",
+      "authors": [
+        "Alexander Sergeievitch Poushkin"
+      ],
+      "isbn10": "1605976962",
+      "id": "9781605976969",
+      "addedAt": 1762643833663
+    },
+    "9781641814539": {
+      "title": "Don Quixote",
+      "coverUrl": "https://books.google.com/books/content?id=BfxUzQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "isbn13": "9781641814539",
+      "borrowHistory": [
+        {
+          "borrowedAt": 1763096400000,
+          "borrower": "Jacob"
+        }
+      ],
+      "authors": [
+        "Cervantes"
+      ],
+      "addedAt": 1762643833238,
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9781641814539",
+      "isbn10": "1641814535"
+    },
+    "9781649374042": {
+      "borrowHistory": [
+        {
+          "borrower": "Peter",
+          "borrowedAt": 1762923600000
+        }
+      ],
+      "authors": [
+        "Rebecca Yarros"
+      ],
+      "normalizedSeries": "empyrean",
+      "id": "9781649374042",
+      "addedAt": 1762825588199,
+      "series": [
+        "The Empyrean",
+        "Empyrean",
+        "The Empyrean v.1"
+      ],
+      "title": "Fourth Wing",
+      "volumeNumber": 1,
+      "isbn10": "1649374046",
+      "isbn13": "9781649374042",
+      "subjects": [],
+      "coverUrl": "https://books.google.com/books/content?id=E-OLEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+    },
+    "9781649374172": {
+      "series": [
+        "The Empyrean",
+        "Empyrean"
+      ],
+      "isbn13": "9781649374172",
+      "isbn10": "1649374178",
+      "borrowHistory": [
+        {
+          "borrower": "Rebecca today",
+          "borrowedAt": 1762839452048,
+          "returnedAt": 1762839460053
+        }
+      ],
+      "addedAt": 1762825645361,
+      "title": "Iron Flame",
+      "normalizedSeries": "empyrean",
+      "coverUrl": "https://books.google.com/books/content?id=xIS9EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "volumeNumber": 2,
+      "id": "9781649374172",
+      "authors": [
+        "Rebecca Yarros"
+      ],
+      "subjects": []
+    },
+    "9781649374189": {
+      "isbn13": "9781649374189",
+      "authors": [
+        "Rebecca Yarros"
+      ],
+      "normalizedSeries": "empyrean",
+      "title": "Onyx Storm",
+      "coverUrl": "https://covers.openlibrary.org/b/isbn/9781649374189-M.jpg",
+      "series": [
+        "The Empyrean"
+      ],
+      "id": "9781649374189",
+      "isbn10": "1649374186",
+      "addedAt": 1762802773067,
+      "subjects": [],
+      "borrowHistory": [
+        {
+          "borrower": "Alice",
+          "returnedAt": 1763047281147,
+          "borrowedAt": 1763010000000
+        },
+        {
+          "returnedAt": 1763093033638,
+          "borrowedAt": 1763010000000,
+          "borrower": "Alex"
+        }
+      ],
+      "volumeNumber": 3
+    },
+    "9781712056875": {
+      "authors": [
+        "Herman Melville"
+      ],
+      "isbn13": "9781712056875",
+      "borrowHistory": [],
+      "coverUrl": "https://books.google.com/books/content?id=3ag4zAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "subjects": [
+        "fiction"
+      ],
+      "title": "Typee Illustrated",
+      "id": "9781712056875",
+      "isbn10": "1712056875",
+      "addedAt": 1762643834163
+    },
+    "9781722887865": {
+      "id": "9781722887865",
+      "authors": [
+        "Arthur Conan Doyle"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=Kqr38eKmHfkC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "subjects": [
+        "fiction"
+      ],
+      "title": "The Lost World",
+      "addedAt": 1762643834879,
+      "isbn13": "9781722887865",
+      "borrowHistory": [
+        {
+          "borrower": "anna",
+          "returnedAt": 1762752522990,
+          "borrowedAt": 1762664400000
+        }
+      ],
+      "isbn10": "1722887869"
+    },
+    "9781795039994": {
+      "isbn13": "9781795039994",
+      "addedAt": 1762643834163,
+      "coverUrl": "https://books.google.com/books/content?id=_uSettnphr8C&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "isbn10": "179503999X",
+      "authors": [
+        "Daniel Defoe"
+      ],
+      "borrowHistory": [],
+      "title": "Robinson Crusoe",
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9781795039994"
+    },
+    "9781847394293": {
+      "authors": [
+        "Kevin J. Anderson",
+        "Brian Herbert"
+      ],
+      "subjects": [
+        "fiction"
+      ],
+      "title": "Sisterhood of Dune",
+      "coverUrl": "https://books.google.com/books/content?id=8LNKtQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "borrowHistory": [],
+      "isbn10": "1847394299",
+      "id": "9781847394293",
+      "isbn13": "9781847394293",
+      "addedAt": 1762643834163
+    },
+    "9781880418628": {
+      "coverUrl": "https://books.google.com/books/content?id=Geq0uKAxZPEC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "isbn10": "1880418622",
+      "subjects": [
+        "fantasy"
+      ],
+      "id": "9781880418628",
+      "title": "The Dark Tower VII",
+      "isbn13": "9781880418628",
+      "volumeNumber": null,
+      "authors": [
+        "Stephen King"
+      ],
+      "addedAt": 1762643835286,
+      "borrowHistory": [
+        {
+          "borrowedAt": 1762840977008,
+          "returnedAt": 1762842142882,
+          "borrower": "Alice"
+        },
+        {
+          "borrower": "Adam",
+          "borrowedAt": 1763096400000
+        }
+      ],
+      "series": [
+        "The dark tower",
+        "The dark tower ; v 7"
+      ],
+      "normalizedSeries": "dark tower"
+    },
+    "9781912697120": {
+      "isbn10": "1912697122",
+      "coverUrl": "https://books.google.com/books/content?id=kmWbDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "isbn13": "9781912697120",
+      "title": "Refugee Tales: Volume III",
+      "authors": [
+        "Monica Ali",
+        "Lisa Appignanesi",
+        "David Constantine",
+        "Bernardine Evaristo",
+        "Patrick Gale",
+        "Abdulrazak Gurnah",
+        "David Herd",
+        "Emma Parsons",
+        "Ian Sansom",
+        "Jonathan Skinner",
+        "Gillian Slovo",
+        "Lytton Smith",
+        "Roma Tearne",
+        "Jonathan Wittenberg"
+      ],
+      "borrowHistory": [],
+      "id": "9781912697120",
+      "addedAt": 1762643834879,
+      "subjects": [
+        "fiction"
+      ]
+    },
+    "9781975939410": {
+      "coverUrl": "https://books.google.com/books/content?id=jKmOEAAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "subjects": [
+        "fiction"
+      ],
+      "authors": [
+        "James Joyce"
+      ],
+      "title": "Ulysses",
+      "borrowHistory": [],
+      "isbn10": "1975939417",
+      "isbn13": "9781975939410",
+      "id": "9781975939410",
+      "addedAt": 1762643834879
+    },
+    "9781984226518": {
+      "title": "The Marvelous Land of Oz",
+      "id": "9781984226518",
+      "coverUrl": "https://books.google.com/books/content?id=AENpswEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "isbn10": "1984226517",
+      "authors": [
+        "L. Frank Baum"
+      ],
+      "borrowHistory": [
+        {
+          "borrowedAt": 1762056000000,
+          "borrower": "Dorthy"
+        }
+      ],
+      "isbn13": "9781984226518",
+      "subjects": [
+        "fiction"
+      ],
+      "addedAt": 1762643834879
+    },
+    "9783382129910": {
+      "authors": [
+        "Henry M. Stanley"
+      ],
+      "borrowHistory": [],
+      "addedAt": 1762643833663,
+      "subjects": [
+        "fiction"
+      ],
+      "coverUrl": "https://books.google.com/books/content?id=D32yEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "isbn13": "9783382129910",
+      "id": "9783382129910",
+      "title": "How I Found Livingstone",
+      "isbn10": "3382129914"
+    },
+    "9783736409309": {
+      "coverUrl": "https://books.google.com/books/content?id=JSOvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "subjects": [
+        "fiction"
+      ],
+      "authors": [
+        "Helen Bannerman"
+      ],
+      "title": "Little Black Sambo",
+      "isbn10": "3736409303",
+      "borrowHistory": [],
+      "isbn13": "9783736409309",
+      "id": "9783736409309",
+      "addedAt": 1762643833238
+    },
+    "9783861841845": {
+      "authors": [
+        "James Matthew Barrie"
+      ],
+      "isbn10": "3861841843",
+      "addedAt": 1762643833663,
+      "title": "Peter Pan",
+      "borrowHistory": [],
+      "coverUrl": "https://books.google.com/books/content?id=ppC2MwEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "isbn13": "9783861841845",
+      "id": "9783861841845",
+      "subjects": [
+        "fiction"
+      ]
+    },
+    "9788446023708": {
+      "coverUrl": "https://books.google.com/books/content?id=XdMBTKWSfeMC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+      "id": "9788446023708",
+      "authors": [
+        "Nikolái V. Gogol"
+      ],
+      "title": "Taras Bulba",
+      "isbn13": "9788446023708",
+      "subjects": [
+        "fiction"
+      ],
+      "addedAt": 1762643832829,
+      "isbn10": "8446023709",
+      "borrowHistory": []
+    },
+    "9798531908582": {
+      "id": "9798531908582",
+      "isbn13": "9798531908582",
+      "addedAt": 1762643834163,
+      "coverUrl": "https://books.google.com/books/content?id=P3B7zgEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "borrowHistory": [],
+      "subjects": [
+        "fiction"
+      ],
+      "title": "The Little Lady of the Big House Illustrated",
+      "isbn10": null,
+      "authors": [
+        "Jack London"
+      ]
+    },
+    "9798581375969": {
+      "id": "9798581375969",
+      "isbn13": "9798581375969",
+      "title": "Robinson Crusoe Illustrated",
+      "coverUrl": "https://books.google.com/books/content?id=sIYezgEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "authors": [
+        "Daniel Defoe"
+      ],
+      "isbn10": null,
+      "addedAt": 1762643833663,
+      "subjects": [
+        "fiction"
+      ],
+      "borrowHistory": []
+    },
+    "9798664564921": {
+      "coverUrl": "https://books.google.com/books/content?id=H0uczQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "id": "9798664564921",
+      "authors": [
+        "Charles Dickens"
+      ],
+      "isbn13": "9798664564921",
+      "isbn10": null,
+      "title": "A Christmas Carol Illustrated",
+      "subjects": [
+        "fiction"
+      ],
+      "addedAt": 1762643834163,
+      "borrowHistory": [
+        {
+          "borrowedAt": 1763096400000,
+          "borrower": "Sam"
+        }
+      ]
+    },
+    "9798673972533": {
+      "isbn13": "9798673972533",
+      "borrowHistory": [],
+      "subjects": [
+        "fiction"
+      ],
+      "id": "9798673972533",
+      "title": "John Milton",
+      "isbn10": null,
+      "coverUrl": "https://books.google.com/books/content?id=KTT7zQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "authors": [
+        "John Milton"
+      ],
+      "addedAt": 1762643834163
+    },
+    "9798681728580": {
+      "coverUrl": "https://books.google.com/books/content?id=0lPazQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "title": "The Wonderful Wizard of Oz Illustrated",
+      "borrowHistory": [],
+      "subjects": [
+        "fiction"
+      ],
+      "authors": [
+        "Lyman Frank Baum"
+      ],
+      "isbn13": "9798681728580",
+      "addedAt": 1762643834879,
+      "isbn10": null,
+      "id": "9798681728580"
+    },
+    "9798705583591": {
+      "addedAt": 1762643833238,
+      "isbn10": null,
+      "id": "9798705583591",
+      "title": "Don Quixote Annotated",
+      "coverUrl": "https://books.google.com/books/content?id=svtYzgEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+      "isbn13": "9798705583591",
+      "subjects": [
+        "fiction"
+      ],
+      "borrowHistory": [],
+      "authors": [
+        "Migue D Cervantes"
+      ]
+    }
+  }
+}

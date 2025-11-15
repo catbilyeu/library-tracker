@@ -5,6 +5,7 @@
   let usingNative=false; // BarcodeDetector vs ZXing
   let video=null; let stream=null;
   let zxingReader=null; let zxingControls=null; let zxingModule=null; let cameraList=[]; let currentCamIdx=-1;
+  let lastIsbn=null; let lastDetectedAt=0;
 
   const overlay = ()=> document.getElementById('scanner-overlay');
 
@@ -130,7 +131,9 @@
               const text = codes[0]?.rawValue || codes[0]?.raw || '';
               const isbn = validateEANToISBN13(text);
               if(isbn){
-                onDetectedIsbn(isbn); return; // close will stop loop
+                onDetectedIsbn(isbn); // do not close; continue scanning
+                // Debounce: ignore duplicates for 2s
+                pauseUntil = Date.now() + 1000;
               }
             }
           }catch{}
@@ -204,9 +207,13 @@
 
   function onDetectedIsbn(isbn){
     console.info('[scanner] Detected ISBN13', isbn);
-    try{ pauseUntil = Date.now() + 2000; }catch{}
+    // Debounce duplicate detects of the same code within 2s
+    const now = Date.now();
+    if(lastIsbn === isbn && (now - lastDetectedAt) < 2000){ return; }
+    lastIsbn = isbn; lastDetectedAt = now;
+    try{ pauseUntil = now + 1000; }catch{}
     publish('scanner:detected', { isbn13: isbn });
-    close();
+    // keep scanner open for batch scanning
   }
 
   async function open({ deviceId:did }={}){

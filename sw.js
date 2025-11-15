@@ -6,7 +6,7 @@
  * - Avoid caching Open Library JSON metadata
  */
 
-const PRECACHE = 'precache-v7';
+const PRECACHE = 'precache-v8';
 const RUNTIME_IMAGE_CACHE = 'runtime-images-v1';
 
 // Static assets to precache

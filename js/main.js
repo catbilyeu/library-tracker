@@ -575,6 +575,9 @@
     // Wire event subscriptions for Hands-Free click and Voice intents
     subscribe('handsfree:click', onHandsfreeClick);
     subscribe('voice:intent', onVoiceIntent);
+    // Book add and scanner events
+    subscribe('book:add', onBookAdd);
+    subscribe('scanner:detected', onScannerDetected);
     // Load settings and apply preferences
     try{
       const s = await Storage.getSettings();
