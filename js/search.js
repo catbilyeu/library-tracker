@@ -4,6 +4,13 @@
 
   function setIndex(list){ books = list||[]; fuse = new Fuse(books, { includeScore:true, threshold:0.35, keys:['title','authors','series','isbn13','isbn10'] }); }
 
+  function isModalOpen(){
+    try{
+      const r = document.getElementById('book-modal');
+      return !!(r && r.classList.contains('open') && r.getAttribute('aria-hidden') !== 'true');
+    }catch{ return false; }
+  }
+
   function query(q){
     const str = (q||'').trim(); lastQuery = str;
     const clearBtn = document.getElementById('btn-clear-search');
@@ -13,8 +20,14 @@
     if(!fuse) return;
     const res = fuse.search(str).map(r=>r.item);
     if(countEl) countEl.textContent = `${res.length} result${res.length===1?'':'s'}`;
-    if(res.length===1){ publish('modal:open', { isbn13: res[0].isbn13 }); }
-    else { publish('shelves:render', { books: res }); }
+    if(res.length===1){
+      // Avoid hijacking the UI if a book modal is already open (e.g., during returns)
+      if(!isModalOpen()){
+        publish('modal:open', { isbn13: res[0].isbn13 });
+      }
+    } else {
+      publish('shelves:render', { books: res });
+    }
   }
 
   function init(api){ publish=api.publish; subscribe=api.subscribe;

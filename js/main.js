@@ -351,9 +351,6 @@
           const settings = await Storage.getSettings();
           if(settings.voiceAnnouncements!==false){
             const count = openLoans.length;
-    // Now that we’re listening for auth:state, initialize Firebase
-    try{ await Firebase.init({ publish, subscribe }); }catch{}
-
             const msg = `Return ${count} book${count===1?'':'s'} for ${borrower}?`;
             const utter = new SpeechSynthesisUtterance(msg);
             utter.lang = navigator.language || 'en-US';
