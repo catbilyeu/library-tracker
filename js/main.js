@@ -253,6 +253,15 @@
         break; }
       case 'scanner:open':
         publish('scanner:open', {}); break;
+      case 'voice:toggle': {
+        const on = !!payload.enabled;
+        // Reflect UI state
+        try{ const vBtn = document.getElementById('toggle-voice'); if(vBtn) vBtn.setAttribute('aria-pressed', String(on)); }catch{}
+        // Persist preference
+        try{ await Storage.setSettings({ voiceEnabled: on }); }catch{}
+        // Toggle engine
+        publish('voice:toggle', { enabled: on });
+        break; }
       case 'book:add':
         if(!payload.isbn13){ Utils.toast('Invalid ISBN', { type:'error' }); return; }
         publish('book:add', { isbn13: payload.isbn13 }); break;
@@ -270,19 +279,25 @@
         await Storage.putBook(book);
         // Emit a borrow:lent event for consistency with modal flow
         try{ publish('borrow:lent', { isbn13: book.isbn13, borrower, borrowedAt }); }catch{}
-        // If announcements are off, open the book modal so the user gets visual confirmation
-        try{
-          const settings = await Storage.getSettings();
-          if(settings.voiceAnnouncements===false){ publish('modal:open', { isbn13: book.isbn13 }); }
-        }catch{}
+        // Always open the book modal to show the new entry
+        try{ publish('modal:open', { isbn13: book.isbn13 }); }catch{}
         break; }
       case 'return': {
         const results = await resolveBooks(payload.target);
         if(results.length===0){ Utils.toast('No matching book found', { type:'warn' }); return; }
         if(results.length>1){ publish('shelves:render', { books: results }); Utils.toast(`${results.length} matches — refine your request`, { type:'info' }); return; }
-        const book = results[0]; const last = (book.borrowHistory||[]).slice().reverse().find(x=>!x.returnedAt);
-        if(!last){ Utils.toast('Book is not currently lent out', { type:'info' }); return; }
-        last.returnedAt = Date.now(); await Storage.putBook(book); break; }
+        const book = results[0];
+        const borrowerFilter = (payload.borrower||'').trim().toLowerCase();
+        const openEntries = (book.borrowHistory||[]).filter(h=>!h.returnedAt);
+        let entry = null;
+        if(borrowerFilter){ entry = openEntries.find(h=> (h.borrower||'').trim().toLowerCase()===borrowerFilter); }
+        if(!entry) entry = openEntries.slice().reverse()[0];
+        if(!entry){ Utils.toast('Book is not currently lent out', { type:'info' }); return; }
+        entry.returnedAt = Date.now();
+        await Storage.putBook(book);
+        // Open the book modal to show updated status
+        try{ publish('modal:open', { isbn13: book.isbn13 }); }catch{}
+        break; }
       case 'borrower:return': {
         const borrower = (payload.borrower||'').trim(); if(!borrower) return;
         let returnedAt = payload.returnedAt; if(typeof returnedAt !== 'number' || isNaN(returnedAt)) returnedAt = Date.now();
@@ -387,29 +402,38 @@
         if(results.length===0){ Utils.toast('No matching book found', { type:'warn' }); return; }
         if(results.length>1){ publish('shelves:render', { books: results }); Utils.toast(`${results.length} matches — refine your request`, { type:'info' }); return; }
         const book = results[0];
-        // Inline confirm overlay (avoid native confirm)
-        const overlay = document.createElement('div');
-        overlay.className = 'inline-overlay overlay-pending-remove';
-        overlay.setAttribute('role','dialog');
-        overlay.setAttribute('aria-modal','true');
-        overlay.setAttribute('aria-labelledby','remove-title');
-        const dialog = document.createElement('div');
-        dialog.className = 'dialog';
-        const h3 = document.createElement('h3'); h3.id = 'remove-title'; h3.textContent = 'Remove book';
-        const msg = document.createElement('p'); msg.textContent = `Are you sure you want to remove "${book.title||'(Untitled)'}" from your library?`;
-        const actions = document.createElement('div'); actions.className = 'actions';
-        const cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='Cancel';
-        const confirmBtn = document.createElement('button'); confirmBtn.type='button'; confirmBtn.className='danger'; confirmBtn.textContent='Remove';
-        actions.appendChild(cancelBtn); actions.appendChild(confirmBtn);
-        dialog.appendChild(h3); dialog.appendChild(msg); dialog.appendChild(actions);
-        overlay.appendChild(dialog); document.body.appendChild(overlay);
-        confirmBtn.focus();
-        const cleanup=()=> overlay.remove();
-        overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
-        cancelBtn.onclick = cleanup;
-        confirmBtn.onclick = async ()=>{ await Storage.deleteBook(book.isbn13); cleanup(); };
-        // Store context on window for voice confirmation
-        window.__voicePendingConfirm = { action:'removeBook', payload:{ isbn13: book.isbn13 } };
+        // Open the book modal first
+        try{ publish('modal:open', { isbn13: book.isbn13 }); }catch{}
+        // Then show an inline confirmation overlay anchored to the modal so it appears above it
+        const mkOverlay = ()=>{
+          const overlay = document.createElement('div');
+          overlay.className = 'inline-overlay overlay-pending-remove';
+          overlay.setAttribute('role','dialog');
+          overlay.setAttribute('aria-modal','true');
+          overlay.setAttribute('aria-labelledby','remove-title');
+          const dialog = document.createElement('div');
+          dialog.className = 'dialog';
+          const h3 = document.createElement('h3'); h3.id = 'remove-title'; h3.textContent = 'Remove book';
+          const msg = document.createElement('p'); msg.textContent = `Are you sure you want to remove "${book.title||'(Untitled)'}" from your library?`;
+          const actions = document.createElement('div'); actions.className = 'actions';
+          const cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='Cancel';
+          const confirmBtn = document.createElement('button'); confirmBtn.type='button'; confirmBtn.className='danger'; confirmBtn.textContent='Remove';
+          actions.appendChild(cancelBtn); actions.appendChild(confirmBtn);
+          dialog.appendChild(h3); dialog.appendChild(msg); dialog.appendChild(actions);
+          overlay.appendChild(dialog);
+          // Append overlay inside the book modal root so it's layered above
+          const modalRoot = document.getElementById('book-modal');
+          if(modalRoot){ modalRoot.appendChild(overlay); } else { document.body.appendChild(overlay); }
+          confirmBtn.focus();
+          const cleanup=()=> overlay.remove();
+          overlay.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ e.preventDefault(); cleanup(); }});
+          cancelBtn.onclick = cleanup;
+          confirmBtn.onclick = async ()=>{ await Storage.deleteBook(book.isbn13); cleanup(); };
+          // Store context on window for voice confirmation
+          window.__voicePendingConfirm = { action:'removeBook', payload:{ isbn13: book.isbn13 } };
+        };
+        // Delay a tick to let modal render before inserting overlay
+        setTimeout(mkOverlay, 0);
         break; }
       case 'confirm:generic': {
         const pending = window.__voicePendingConfirm;

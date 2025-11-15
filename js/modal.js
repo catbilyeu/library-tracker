@@ -311,6 +311,8 @@
           publish('borrow:lent',{isbn13:current.isbn13,borrower,borrowedAt});
           stopDictation();
           overlay.remove();
+          // Refresh the modal to show the new entry immediately
+          try{ open({ isbn13: current.isbn13 }); }catch{}
         };
         confirmBtn.onclick=confirm;
         input.addEventListener('keypress',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirm(); }});

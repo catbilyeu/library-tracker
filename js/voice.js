@@ -98,8 +98,8 @@
     if(/^(close|dismiss|cancel)$/.test(s)) return { type:'modal:close', payload:{} };
 
     // pagination: next/previous page
-    if(/^(next\s*page|go\s*(to\s*)?the\s*next\s*page|go\s*next)$/i.test(s)) return { type:'pager:next', payload:{} };
-    if(/^(previous\s*page|prev\s*page|go\s*(back\s*to\s*the\s*)?previous\s*page|go\s*back|go\s*previous|go\s*to\s*the\s*previous\s*page)$/i.test(s)) return { type:'pager:prev', payload:{} };
+    if(/^(next\s*page|go\s*(to\s*)?the\s*next\s*page|go\s*next|next)$/i.test(s)) return { type:'pager:next', payload:{} };
+    if(/^(previous\s*page|prev\s*page|go\s*(back\s*to\s*the\s*)?previous\s*page|go\s*back|go\s*previous|go\s*to\s*the\s*previous\s*page|prev|previous|back)$/i.test(s)) return { type:'pager:prev', payload:{} };
 
     // search/find/lookup
     let m = s.match(/^(search|find|look\s*up|lookup)\s+(.+)/i);
@@ -143,18 +143,22 @@
       return { type:'borrower:list', payload:{ borrower } };
     }
 
-    // "[name] is borrowing [book]" => lend intent
-    m = s.match(/^(.+?)\s+is\s+borrow(ing)?\s+(.+)/i);
+    // "[name] is borrowing [book] [on/for/last/next/this <datePhrase>]" => lend intent (capture date if provided)
+    m = s.match(/^(.+?)\s+is\s+borrow(ing)?\s+(.+?)(?:\s+(?:on|for|last|next|this)\s+(.+))?$/i);
     if(m){
       const borrower=(m[1]||'').trim(); const target=(m[3]||'').trim();
-      return { type:'lend', payload:{ target, borrower, borrowedAt: null } };
+      const datePhrase=(m[4]||'').trim();
+      let borrowedAt = null; if(datePhrase){ borrowedAt = Utils.parseDatePhrase(datePhrase); }
+      return { type:'lend', payload:{ target, borrower, borrowedAt } };
     }
 
-    // name borrowed book => lend intent
-    m = s.match(/^([^\d]+?)\s+borrowed\s+(.+)/i);
+    // "[name] borrowed [book] [on/for/last/next/this <datePhrase>]" => lend intent (capture date if provided)
+    m = s.match(/^([^\d]+?)\s+borrowed\s+(.+?)(?:\s+(?:on|for|last|next|this)\s+(.+))?$/i);
     if(m){
       const borrower=(m[1]||'').trim(); const target=(m[2]||'').trim();
-      return { type:'lend', payload:{ target, borrower, borrowedAt: null } };
+      const datePhrase=(m[3]||'').trim();
+      let borrowedAt = null; if(datePhrase){ borrowedAt = Utils.parseDatePhrase(datePhrase); }
+      return { type:'lend', payload:{ target, borrower, borrowedAt } };
     }
 
     // name returned the book(s) they borrowed [on <datePhrase>]
@@ -185,6 +189,19 @@
       return { type:'lend', payload:{ target, borrower, borrowedAt } };
     }
 
+    // return [book] for [name]
+    m = s.match(/^return\s+(.+?)\s+for\s+(.+)/i);
+    if(m){
+      const target=(m[1]||'').trim(); const borrower=(m[2]||'').trim();
+      return { type:'return', payload:{ target, borrower } };
+    }
+    // return [book]
+    m = s.match(/^return\s+(.+)/i);
+    if(m){
+      const target=(m[1]||'').trim();
+      return { type:'return', payload:{ target } };
+    }
+
     // return all books for a borrower
     m = s.match(/^return\s+books\s+for\s+(.+)/i);
     if(m){
@@ -201,6 +218,9 @@
     // voice on/off and info
     m = s.match(/^voice\s*(on|off)$/i);
     if(m){ return { type:'voice:toggle', payload:{ enabled: m[1].toLowerCase()==='on' } } }
+    // Also support "enable/disable voice" and "turn on/off voice"
+    if(/^(enable|turn\s*on)\s+voice$/i.test(s)) return { type:'voice:toggle', payload:{ enabled: true } };
+    if(/^(disable|turn\s*off)\s+voice$/i.test(s)) return { type:'voice:toggle', payload:{ enabled: false } };
     if(/^voice\s+info$/i.test(s)) return { type:'voice:info', payload:{} };
 
     return null;
@@ -313,7 +333,13 @@
   }
 
   function stopRecognition(quiet){
-    try{ restartOnEnd=false; rec?.stop(); }catch{}
+    try{ restartOnEnd=false; }catch{}
+    try{ rec?.stop?.(); }catch{}
+    try{ rec?.abort?.(); }catch{}
+    // Fully reset dictation/PTT state
+    dictation.active = false; dictation.startedMic = false; dictation.target = null;
+    pttActive = false; startedByPTT = false;
+    finalText=''; interimText='';
     status='idle'; renderHUD();
     if(!quiet) Utils.toast('Voice stopped');
   }
@@ -324,6 +350,7 @@
       // If continuous mode, start immediately; otherwise wait for PTT
       if(continuousMode || pttActive) startRecognition(); else { status='idle'; renderHUD(); }
     } else {
+      // Stop recognition and any active dictation immediately
       stopRecognition();
     }
   }
@@ -417,6 +444,7 @@
     subscribe('voice:setPtt', ({enabled})=>{ setPttMode(!!enabled); });
     // Dictation control hooks from other modules (e.g., hands-free and modal)
     subscribe('voice:dictation:start', ({ target })=>{
+      if(!isEnabled) return; // hard gate when voice is disabled
       dictation.active = true; dictation.target = target || document.activeElement;
       const wasListening = (status === 'listening');
       dictation.startedMic = !wasListening;
