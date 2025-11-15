@@ -222,24 +222,17 @@
       case 'pager:next': publish('pager:next', {}); break;
       case 'pager:prev': publish('pager:prev', {}); break;
       case 'modal:close': {
-        // Close inline overlays (including those injected by Modal or remove flow)
+        // If a confirmation or inline overlay is open, close that first and stop (do not close the book modal)
         const overlays = Array.from(document.querySelectorAll('.inline-overlay'));
-        // Only close inline overlays if we are not in the middle of a pending voice confirmation
-        const pending = window.__voicePendingConfirm;
-        if(overlays.length && (!pending || (pending.action!=='removeBook' && pending.action!=='bulkReturn' && pending.action!=='removeHistoryEntry'))){ overlays.forEach(o=>o.remove()); }
-        // Also clear any pending voice confirm
-        try{ if(!pending || (pending.action!=='removeBook' && pending.action!=='bulkReturn' && pending.action!=='removeHistoryEntry')) window.__voicePendingConfirm = null; }catch{}
-        // Close settings if open
+        if(overlays.length){ overlays.forEach(o=>o.remove()); try{ window.__voicePendingConfirm = null; }catch{} break; }
+        // Otherwise, close app-level panels and modals
         try{ Settings.close?.(); }catch{}
-        // Close book modal if open
         try{ Modal.close?.(); }catch{}
-        // Close scanner if open
         try{ window.Scanner?.close?.(); }catch{}
         try{
           const so = document.getElementById('scanner-overlay');
           if(so){ so.hidden = true; so.innerHTML = ''; }
         }catch{}
-        // Close info modals (Hands-Free and Voice)
         try{
           ['hf-info-modal','voice-info-modal'].forEach(id=>{
             const el = document.getElementById(id);
